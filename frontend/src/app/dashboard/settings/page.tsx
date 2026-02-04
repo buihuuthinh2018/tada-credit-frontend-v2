@@ -21,13 +21,17 @@ export default function DashboardSettingsPage() {
   const [copied, setCopied] = useState(false);
 
   const copyReferralCode = () => {
-    if (user?.referralCode) {
-      navigator.clipboard.writeText(user.referralCode);
+    if (user?.referral_code) {
+      navigator.clipboard.writeText(user.referral_code);
       setCopied(true);
       toast.success("Đã sao chép mã giới thiệu!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // Helper to check user status
+  const isVerified = user?.status === "ACTIVE" || user?.status === "PENDING_VERIFY";
+  const isActive = user?.status === "ACTIVE";
 
   return (
     <div className="space-y-6">
@@ -48,12 +52,8 @@ export default function DashboardSettingsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Họ</Label>
-              <Input value={user?.firstName || ""} disabled />
-            </div>
-            <div className="space-y-2">
-              <Label>Tên</Label>
-              <Input value={user?.lastName || ""} disabled />
+              <Label>Họ và tên</Label>
+              <Input value={user?.fullname || ""} disabled />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
@@ -62,6 +62,10 @@ export default function DashboardSettingsPage() {
             <div className="space-y-2">
               <Label>Số điện thoại</Label>
               <Input value={user?.phone || ""} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label>Giới tính</Label>
+              <Input value={user?.gender === "MALE" ? "Nam" : user?.gender === "FEMALE" ? "Nữ" : "Khác"} disabled />
             </div>
           </div>
         </CardContent>
@@ -82,7 +86,7 @@ export default function DashboardSettingsPage() {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <Input
-                value={user?.referralCode || ""}
+                value={user?.referral_code || ""}
                 readOnly
                 className="font-mono text-lg"
               />
@@ -116,8 +120,8 @@ export default function DashboardSettingsPage() {
                   Trạng thái xác minh email của bạn
                 </p>
               </div>
-              <Badge variant={user?.isVerified ? "success" : "warning"}>
-                {user?.isVerified ? "Đã xác minh" : "Chưa xác minh"}
+              <Badge variant={isVerified ? "success" : "warning"}>
+                {isVerified ? "Đã xác minh" : "Chưa xác minh"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -127,8 +131,8 @@ export default function DashboardSettingsPage() {
                   Tài khoản của bạn có đang hoạt động
                 </p>
               </div>
-              <Badge variant={user?.isActive ? "success" : "destructive"}>
-                {user?.isActive ? "Hoạt động" : "Đã khóa"}
+              <Badge variant={isActive ? "success" : "destructive"}>
+                {isActive ? "Hoạt động" : user?.status === "SUSPENDED" ? "Đã khóa" : "Chờ xác minh"}
               </Badge>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -139,8 +143,8 @@ export default function DashboardSettingsPage() {
                 </p>
               </div>
               <span className="font-medium">
-                {user?.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString("vi-VN")
+                {user?.created_at
+                  ? new Date(user.created_at).toLocaleDateString("vi-VN")
                   : "-"}
               </span>
             </div>

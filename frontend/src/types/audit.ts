@@ -2,24 +2,22 @@ import { User } from "./auth";
 import { PaginationParams } from "./api";
 
 export interface AuditLog {
-  id: number;
-  userId: number;
+  id: string;
+  user_id: string;
   action: string;
-  resource: string;
-  targetType: string | null;
-  targetId: number | null;
-  changes: Record<string, unknown>;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
 
   user?: User;
 }
 
 export interface AuditLogFilters extends PaginationParams {
-  userId?: number;
+  userId?: string;
   action?: string;
-  resource?: string;
   targetType?: string;
-  targetId?: number;
+  targetId?: string;
 }

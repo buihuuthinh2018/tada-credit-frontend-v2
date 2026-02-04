@@ -21,7 +21,7 @@ export default function Home() {
   useEffect(() => {
     if (isAuthenticated) {
       const hasAdminRole = user?.roles?.some((r) =>
-        ["SUPER_ADMIN", "ADMIN"].includes(r.name)
+        ["SUPER_ADMIN", "ADMIN"].includes(r.code)
       );
       if (hasAdminRole) {
         router.push("/admin");

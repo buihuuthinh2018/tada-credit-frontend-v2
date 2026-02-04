@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ClipboardList, Search, Filter } from "lucide-react";
+import { CopyableId } from "@/components/ui/copyable-id";
 
 export default function AdminAuditLogsPage() {
   const [page, setPage] = useState(1);
@@ -70,7 +71,7 @@ export default function AdminAuditLogsPage() {
             <div>
               <CardTitle>Lịch sử hoạt động</CardTitle>
               <CardDescription>
-                Tổng cộng {logs?.total || 0} bản ghi
+                Tổng cộng {logs?.meta?.total || 0} bản ghi
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -130,49 +131,46 @@ export default function AdminAuditLogsPage() {
                     <TableHead>Thời gian</TableHead>
                     <TableHead>User</TableHead>
                     <TableHead>Action</TableHead>
-                    <TableHead>Resource</TableHead>
                     <TableHead>Target</TableHead>
                     <TableHead>IP Address</TableHead>
-                    <TableHead>Changes</TableHead>
+                    <TableHead>Metadata</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {logs.data.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-sm">
-                        {new Date(log.createdAt).toLocaleString("vi-VN")}
+                        {new Date(log.created_at).toLocaleString("vi-VN")}
                       </TableCell>
                       <TableCell>
                         {log.user ? (
                           <>
-                            {log.user.firstName} {log.user.lastName}
+                            {log.user.fullname}
                             <br />
                             <span className="text-xs text-gray-500">
-                              #{log.userId}
+                              {log.user.email}
                             </span>
                           </>
                         ) : (
-                          <span className="text-gray-500">#{log.userId}</span>
+                          <span className="text-gray-500">#{log.user_id.slice(0, 8)}</span>
                         )}
                       </TableCell>
                       <TableCell>{getActionBadge(log.action)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{log.resource}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {log.targetType && log.targetId && (
-                          <span className="text-sm">
-                            {log.targetType} #{log.targetId}
-                          </span>
+                        {log.target_type && log.target_id && (
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm">{log.target_type}</span>
+                            <CopyableId id={log.target_id} maxLength={8} />
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-gray-500">
-                        {log.ipAddress || "-"}
+                        {log.ip_address || "-"}
                       </TableCell>
                       <TableCell className="max-w-xs">
-                        {log.changes && Object.keys(log.changes).length > 0 ? (
+                        {log.metadata && Object.keys(log.metadata).length > 0 ? (
                           <code className="text-xs bg-gray-100 p-1 rounded">
-                            {JSON.stringify(log.changes).slice(0, 50)}...
+                            {JSON.stringify(log.metadata).slice(0, 50)}...
                           </code>
                         ) : (
                           "-"
@@ -191,12 +189,12 @@ export default function AdminAuditLogsPage() {
                   Trang trước
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Trang {page} / {Math.ceil((logs.total || 0) / 20)}
+                  Trang {page} / {logs.meta?.totalPages || 1}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil((logs.total || 0) / 20)}
+                  disabled={!logs.meta?.hasNextPage}
                 >
                   Trang sau
                 </Button>

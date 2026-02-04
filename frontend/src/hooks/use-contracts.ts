@@ -3,7 +3,6 @@ import apiClient from "@/lib/api-client";
 import type {
   Contract,
   PaginatedResponse,
-  ContractStatus,
   UpdateContractAnswersRequest,
   WorkflowTransition,
   ContractHistory,
@@ -16,7 +15,7 @@ export function useCreateContract() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (serviceId: number) => {
+    mutationFn: async (serviceId: string) => {
       const { data } = await apiClient.post("/contracts", { serviceId });
       return data;
     },
@@ -34,7 +33,7 @@ export function useCreateContract() {
 export function useContracts(params?: {
   page?: number;
   limit?: number;
-  status?: ContractStatus;
+  stageCode?: string; // Dynamic stage code
 }) {
   return useQuery<PaginatedResponse<Contract>>({
     queryKey: ["contracts", params],
@@ -46,7 +45,7 @@ export function useContracts(params?: {
 }
 
 // Get contract by ID
-export function useContract(id: number) {
+export function useContract(id: String) {
   return useQuery<Contract>({
     queryKey: ["contracts", id],
     queryFn: async () => {
@@ -66,7 +65,7 @@ export function useUpdateContractAnswers() {
       id,
       answers,
     }: {
-      id: number;
+      id: String;
       answers: UpdateContractAnswersRequest["answers"];
     }) => {
       const { data } = await apiClient.put(`/contracts/${id}/answers`, {
@@ -94,8 +93,8 @@ export function useUploadContractDocument() {
       docReqId,
       files,
     }: {
-      contractId: number;
-      docReqId: number;
+      contractId: String;
+      docReqId: String;
       files: FileList;
     }) => {
       const formData = new FormData();
@@ -121,7 +120,7 @@ export function useUploadContractDocument() {
 }
 
 // Get available transitions for a contract
-export function useContractTransitions(contractId: number) {
+export function useContractTransitions(contractId: string) {
   return useQuery<WorkflowTransition[]>({
     queryKey: ["contracts", contractId, "transitions"],
     queryFn: async () => {
@@ -135,7 +134,7 @@ export function useContractTransitions(contractId: number) {
 }
 
 // Get contract history
-export function useContractHistory(contractId: number) {
+export function useContractHistory(contractId: String) {
   return useQuery<ContractHistory[]>({
     queryKey: ["contracts", contractId, "history"],
     queryFn: async () => {
@@ -150,9 +149,10 @@ export function useContractHistory(contractId: number) {
 export function useAdminContracts(params?: {
   page?: number;
   limit?: number;
-  userId?: number;
-  serviceId?: number;
-  status?: ContractStatus;
+  userId?: string;
+  serviceId?: string;
+  stageId?: string;
+  search?: string;
 }) {
   return useQuery<PaginatedResponse<Contract>>({
     queryKey: ["admin", "contracts", params],
@@ -163,6 +163,32 @@ export function useAdminContracts(params?: {
   });
 }
 
+// Admin: Get contract detail by ID
+export function useAdminContractDetail(id: string | undefined) {
+  return useQuery<Contract>({
+    queryKey: ["admin", "contracts", id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/admin/contracts/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+}
+
+// Admin: Get available transitions for a contract
+export function useAdminContractTransitions(contractId: string | undefined) {
+  return useQuery<WorkflowTransition[]>({
+    queryKey: ["admin", "contracts", contractId, "transitions"],
+    queryFn: async () => {
+      const { data } = await apiClient.get(
+        `/admin/contracts/${contractId}/transitions`
+      );
+      return data;
+    },
+    enabled: !!contractId,
+  });
+}
+
 // Admin: Transition contract
 export function useAdminTransitionContract() {
   const queryClient = useQueryClient();
@@ -170,26 +196,72 @@ export function useAdminTransitionContract() {
   return useMutation({
     mutationFn: async ({
       id,
-      data,
+      toStageId,
+      note,
     }: {
-      id: number;
-      data: ContractTransitionRequest;
+      id: string;
+      toStageId: string;
+      note?: string;
     }) => {
       const response = await apiClient.patch(
         `/admin/contracts/${id}/transition`,
-        data
+        { toStageId, note }
       );
       return response.data;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["admin", "contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["contracts", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "contracts", id] });
       toast.success("Chuyển trạng thái thành công!");
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(
         error.response?.data?.message || "Chuyển trạng thái thất bại"
       );
+    },
+  });
+}
+
+// Submit contract with answers and files (deferred upload)
+export function useSubmitContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      contractId,
+      answers,
+      files,
+    }: {
+      contractId: string;
+      answers: Array<{ questionId: string; answer: string }>;
+      files: Record<string, File[]>;
+    }) => {
+      const formData = new FormData();
+      
+      // Add answers as JSON
+      formData.append("answers", JSON.stringify(answers));
+      
+      // Add files with document requirement IDs
+      Object.entries(files).forEach(([docReqId, fileList]) => {
+        fileList.forEach((file) => {
+          formData.append(`files_${docReqId}`, file);
+        });
+      });
+
+      const { data } = await apiClient.post(
+        `/contracts/${contractId}/submit`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      return data;
+    },
+    onSuccess: (_, { contractId }) => {
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["contracts", contractId] });
+      toast.success("Nộp hồ sơ thành công!");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message || "Nộp hồ sơ thất bại");
     },
   });
 }

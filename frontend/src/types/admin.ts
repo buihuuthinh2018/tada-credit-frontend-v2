@@ -1,5 +1,4 @@
 import { PaginationParams } from "./api";
-import { ContractStatus } from "./contract";
 import { WithdrawalStatus } from "./wallet";
 
 export interface UserFilters extends PaginationParams {
@@ -17,12 +16,12 @@ export interface UpdateUserRequest {
 }
 
 export interface ContractFilters extends PaginationParams {
-  userId?: number;
-  serviceId?: number;
-  status?: ContractStatus;
+  userId?: string;
+  serviceId?: string;
+  stageCode?: string; // Dynamic stage code from workflow
 }
 
 export interface WithdrawalFilters extends PaginationParams {
-  userId?: number;
+  userId?: string;
   status?: WithdrawalStatus;
 }

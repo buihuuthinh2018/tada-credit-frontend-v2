@@ -35,7 +35,7 @@ export default function AdminDashboardPage() {
       <div>
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-gray-600">
-          Xin chào, {user?.firstName} {user?.lastName}!
+          Xin chào, {user?.fullname || "Admin"}!
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
             {usersLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{usersData?.total || 0}</div>
+              <div className="text-2xl font-bold">{usersData?.meta?.total || 0}</div>
             )}
             <Link href="/admin/users">
               <Button variant="link" className="p-0 h-auto text-sm">
@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold">
-                {contractsData?.total || 0}
+                {contractsData?.meta?.total || 0}
               </div>
             )}
             <Link href="/admin/contracts">
@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-orange-600">
-                {withdrawalsData?.total || 0}
+                {withdrawalsData?.meta?.total || 0}
               </div>
             )}
             <Link href="/admin/withdrawals">

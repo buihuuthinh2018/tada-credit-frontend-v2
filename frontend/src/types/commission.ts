@@ -2,9 +2,9 @@ import { User, Role } from "./auth";
 import { Service } from "./service";
 
 export interface CommissionConfig {
-  id: number;
-  serviceId: number;
-  roleId: number | null;
+  id: string;
+  serviceId: string;
+  roleId: string | null;
   commissionRate: string;
   isActive: boolean;
   effectiveFrom: string;
@@ -17,10 +17,10 @@ export interface CommissionConfig {
 }
 
 export interface CommissionHistory {
-  id: number;
-  userId: number;
-  contractId: number;
-  commissionConfigId: number;
+  id: string;
+  userId: string;
+  contractId: string;
+  commissionConfigId: string;
   amount: string;
   commissionRate: string;
   status: "PENDING" | "PAID";
@@ -30,15 +30,15 @@ export interface CommissionHistory {
 
   user?: User;
   contract?: {
-    id: number;
+    id: string;
     service: { name: string };
   };
   commissionConfig?: CommissionConfig;
 }
 
 export interface CreateCommissionConfigRequest {
-  serviceId: number;
-  roleId?: number;
+  serviceId: string;
+  roleId?: string;
   commissionRate: number;
   effectiveFrom: string;
   effectiveTo?: string;

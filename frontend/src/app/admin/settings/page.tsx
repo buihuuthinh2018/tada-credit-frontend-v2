@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
             <div>
               <p className="text-sm text-gray-500">Họ tên</p>
               <p className="font-medium">
-                {user?.firstName} {user?.lastName}
+                {user?.fullname}
               </p>
             </div>
             <div>
@@ -48,8 +48,8 @@ export default function AdminSettingsPage() {
             <div>
               <p className="text-sm text-gray-500">Vai trò</p>
               <div className="flex gap-1 mt-1">
-                {user?.roles?.map((role) => (
-                  <Badge key={role.id} variant="secondary">
+                {user?.roles?.map((role, index) => (
+                  <Badge key={role.id || `role-${index}`} variant="secondary">
                     {role.name}
                   </Badge>
                 ))}

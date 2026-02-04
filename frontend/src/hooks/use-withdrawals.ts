@@ -45,7 +45,7 @@ export function useWithdrawals(params?: {
 }
 
 // Get withdrawal by ID
-export function useWithdrawal(id: number) {
+export function useWithdrawal(id: string) {
   return useQuery<Withdrawal>({
     queryKey: ["withdrawals", id],
     queryFn: async () => {
@@ -61,7 +61,7 @@ export function useCancelWithdrawal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       const response = await apiClient.patch(`/withdrawals/${id}/cancel`);
       return response.data;
     },
@@ -100,7 +100,7 @@ export function useProcessWithdrawal() {
       id,
       data,
     }: {
-      id: number;
+      id: string;
       data: ProcessWithdrawalRequest;
     }) => {
       const response = await apiClient.patch(

@@ -13,14 +13,20 @@ export function useDocumentRequirements() {
   return useQuery<DocumentRequirement[]>({
     queryKey: ["document-requirements"],
     queryFn: async () => {
-      const { data } = await apiClient.get("/admin/document-requirements");
-      return data;
+      const { data } = await apiClient.get("/admin/document-requirements", {
+        params: { page: 1, limit: 1000, activeOnly: false },
+      });
+
+      // Backend returns paginated shape: { data: [...], meta: {...} }
+      // Keep backward-compat in case older deployments returned a raw array.
+      if (Array.isArray(data)) return data;
+      return data?.data ?? [];
     },
   });
 }
 
 // Get document requirement by ID
-export function useDocumentRequirement(id: number) {
+export function useDocumentRequirement(id: string) {
   return useQuery<DocumentRequirement>({
     queryKey: ["document-requirements", id],
     queryFn: async () => {
@@ -61,7 +67,7 @@ export function useUpdateDocumentRequirement() {
       id,
       data,
     }: {
-      id: number;
+      id: string;
       data: UpdateDocumentRequirementRequest;
     }) => {
       const response = await apiClient.put(

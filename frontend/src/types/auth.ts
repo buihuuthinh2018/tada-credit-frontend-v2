@@ -1,31 +1,42 @@
+export type UserStatus = 'ACTIVE' | 'PENDING_VERIFY' | 'SUSPENDED';
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  fullname: string;
   phone: string;
-  isVerified: boolean;
-  isActive: boolean;
-  referralCode: string;
-  referrerId: number | null;
-  createdAt: string;
-  updatedAt: string;
+  gender?: Gender;
+  birth_date?: string;
+  referral_code: string;
+  referred_by?: string | null;
+  status: UserStatus;
+  created_at: string;
+  updated_at?: string;
   roles?: Role[];
   permissions?: string[];
 }
 
 export interface Role {
-  id: number;
+  id: string;
+  code: string;
   name: string;
   description: string | null;
-  permissions: Permission[];
+  is_system?: boolean;
+  permissions?: Permission[];
+  _count?: {
+    users: number;
+    permissions: number;
+  };
+  created_at?: string;
 }
 
 export interface Permission {
-  id: number;
-  resource: string;
-  action: string;
+  id: string;
+  code: string;
+  name: string;
   description: string | null;
+  created_at?: string;
 }
 
 export interface LoginRequest {
@@ -35,10 +46,11 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
   phone: string;
+  password: string;
+  fullname: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  birthDate: string;
   referralCode?: string;
 }
 

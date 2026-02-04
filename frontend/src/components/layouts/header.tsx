@@ -23,8 +23,8 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user } = useAuth();
   const logoutMutation = useLogout();
 
-  const initials = user
-    ? `${user.firstName?.charAt(0) || ""}${user.lastName?.charAt(0) || ""}`
+  const initials = user?.fullname
+    ? user.fullname.split(" ").map(n => n.charAt(0)).slice(0, 2).join("")
     : "U";
 
   return (
@@ -58,7 +58,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user?.firstName} {user?.lastName}
+                  {user?.fullname}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
                   {user?.email}

@@ -15,6 +15,8 @@ import {
   GitBranch,
   FileBox,
   ClipboardList,
+  TrendingUp,
+  MessageSquare,
 } from "lucide-react";
 import { useLogout, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -25,8 +27,10 @@ const adminNavItems = [
   { href: "/admin/users", label: "Quản lý User", icon: Users },
   { href: "/admin/contracts", label: "Quản lý Hồ sơ", icon: FileText },
   { href: "/admin/withdrawals", label: "Rút tiền", icon: CreditCard },
+  { href: "/admin/commission", label: "Hoa hồng & KPI", icon: TrendingUp },
   { href: "/admin/services", label: "Dịch vụ", icon: FileBox },
   { href: "/admin/documents", label: "Tài liệu", icon: FileCheck },
+  { href: "/admin/questions", label: "Câu hỏi", icon: MessageSquare },
   { href: "/admin/workflows", label: "Workflow", icon: GitBranch },
   { href: "/admin/roles", label: "Phân quyền", icon: Shield },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ClipboardList },
@@ -43,7 +47,7 @@ export function AdminSidebar() {
       <div className="p-4">
         <h1 className="text-2xl font-bold text-white">TADA Admin</h1>
         <p className="text-sm text-gray-400 mt-1">
-          {user?.firstName} {user?.lastName}
+          {user?.fullname}
         </p>
         <p className="text-xs text-blue-400">
           {user?.roles?.map((r) => r.name).join(", ")}

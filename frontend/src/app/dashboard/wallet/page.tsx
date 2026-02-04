@@ -67,9 +67,12 @@ export default function WalletPage() {
     createWithdrawal.mutate(
       {
         amount: parseFloat(withdrawalForm.amount),
-        bankName: withdrawalForm.bankName,
-        bankAccountNumber: withdrawalForm.bankAccountNumber,
-        bankAccountName: withdrawalForm.bankAccountName,
+        method: "BANKING" as const,
+        accountInfo: {
+          bankName: withdrawalForm.bankName,
+          accountNumber: withdrawalForm.bankAccountNumber,
+          accountHolder: withdrawalForm.bankAccountName,
+        },
       },
       {
         onSuccess: () => {
@@ -88,12 +91,17 @@ export default function WalletPage() {
   const getStatusBadge = (status: WithdrawalStatus) => {
     const variants: Record<WithdrawalStatus, "default" | "secondary" | "success" | "destructive" | "warning"> = {
       PENDING: "warning",
-      PROCESSING: "secondary",
-      COMPLETED: "success",
-      FAILED: "destructive",
-      CANCELLED: "destructive",
+      APPROVED: "secondary",
+      PAID: "success",
+      REJECTED: "destructive",
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    const labels: Record<WithdrawalStatus, string> = {
+      PENDING: "Chờ duyệt",
+      APPROVED: "Đã duyệt",
+      PAID: "Đã thanh toán",
+      REJECTED: "Từ chối",
+    };
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
   return (
@@ -293,12 +301,12 @@ export default function WalletPage() {
                       Trang trước
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                      Trang {page} / {Math.ceil((transactions.total || 0) / 10)}
+                      Trang {page} / {Math.ceil((transactions.meta?.total || 0) / 10)}
                     </span>
                     <Button
                       variant="outline"
                       onClick={() => setPage((p) => p + 1)}
-                      disabled={page >= Math.ceil((transactions.total || 0) / 10)}
+                      disabled={page >= Math.ceil((transactions.meta?.total || 0) / 10)}
                     >
                       Trang sau
                     </Button>
@@ -346,7 +354,7 @@ export default function WalletPage() {
                       {withdrawals.data.map((withdrawal) => (
                         <TableRow key={withdrawal.id}>
                           <TableCell>
-                            {new Date(withdrawal.createdAt).toLocaleDateString(
+                            {new Date(withdrawal.created_at).toLocaleDateString(
                               "vi-VN"
                             )}
                           </TableCell>
@@ -356,8 +364,8 @@ export default function WalletPage() {
                             )}{" "}
                             VNĐ
                           </TableCell>
-                          <TableCell>{withdrawal.bankName}</TableCell>
-                          <TableCell>{withdrawal.bankAccountNumber}</TableCell>
+                          <TableCell>{withdrawal.account_info?.bankName || "-"}</TableCell>
+                          <TableCell>{withdrawal.account_info?.accountNumber || "-"}</TableCell>
                           <TableCell>
                             {getStatusBadge(withdrawal.status)}
                           </TableCell>
@@ -390,13 +398,13 @@ export default function WalletPage() {
                     </Button>
                     <span className="text-sm text-muted-foreground">
                       Trang {withdrawalPage} /{" "}
-                      {Math.ceil((withdrawals.total || 0) / 10)}
+                      {Math.ceil((withdrawals.meta?.total || 0) / 10)}
                     </span>
                     <Button
                       variant="outline"
                       onClick={() => setWithdrawalPage((p) => p + 1)}
                       disabled={
-                        withdrawalPage >= Math.ceil((withdrawals.total || 0) / 10)
+                        withdrawalPage >= Math.ceil((withdrawals.meta?.total || 0) / 10)
                       }
                     >
                       Trang sau

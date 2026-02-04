@@ -11,10 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Wallet, FileText, Users, DollarSign, Plus } from "lucide-react";
+import { StageBadge } from "@/components/ui/stage-badge";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -31,7 +31,7 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold">
-          Xin chào, {user?.firstName} {user?.lastName}!
+          Xin chào, {user?.fullname}!
         </h1>
         <p className="text-gray-600">
           Chào mừng bạn đến với TADA Credit Dashboard
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             {contractsLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{contracts?.total || 0}</div>
+              <div className="text-2xl font-bold">{contracts?.meta?.total || 0}</div>
             )}
             <Link href="/dashboard/contracts">
               <Button variant="link" className="p-0 h-auto text-sm">
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono">
-              {user?.referralCode || "---"}
+              {user?.referral_code || "---"}
             </div>
             <p className="text-xs text-muted-foreground">
               Chia sẻ để nhận hoa hồng
@@ -138,23 +138,13 @@ export default function DashboardPage() {
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div>
-                    <p className="font-medium">Hồ sơ #{contract.id}</p>
+                    <p className="font-medium">Hồ sơ #{contract.contract_number}</p>
                     <p className="text-sm text-gray-500">
                       {contract.service?.name || "Dịch vụ"}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <Badge
-                      variant={
-                        contract.status === "COMPLETED"
-                          ? "success"
-                          : contract.status === "REJECTED"
-                          ? "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {contract.currentStage?.name || contract.status}
-                    </Badge>
+                    <StageBadge stage={contract.stage} />
                     <Link href={`/dashboard/contracts/${contract.id}`}>
                       <Button variant="outline" size="sm">
                         Xem chi tiết

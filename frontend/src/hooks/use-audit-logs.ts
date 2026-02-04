@@ -14,7 +14,7 @@ export function useAuditLogs(params?: AuditLogFilters) {
 }
 
 // Get audit logs by user
-export function useAuditLogsByUser(userId: number) {
+export function useAuditLogsByUser(userId: string) {
   return useQuery<AuditLog[]>({
     queryKey: ["audit-logs", "by-user", userId],
     queryFn: async () => {
@@ -28,7 +28,7 @@ export function useAuditLogsByUser(userId: number) {
 }
 
 // Get audit logs by target
-export function useAuditLogsByTarget(targetType: string, targetId: number) {
+export function useAuditLogsByTarget(targetType: string, targetId: string) {
   return useQuery<AuditLog[]>({
     queryKey: ["audit-logs", "by-target", targetType, targetId],
     queryFn: async () => {

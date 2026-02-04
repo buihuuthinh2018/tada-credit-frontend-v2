@@ -19,8 +19,21 @@ export function ProtectedRoute({
   requiredRoles,
 }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, hasPermission, hasRole, hasAnyRole } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
+
+  // Compute role/permission checks based on user state
+  const hasPermission = (permission: string) => {
+    return user?.permissions?.includes(permission) || false;
+  };
+
+  const hasRole = (role: string) => {
+    return user?.roles?.some((r) => r.code === role) || false;
+  };
+
+  const hasAnyRole = (roles: string[]) => {
+    return user?.roles?.some((r) => roles.includes(r.code)) || false;
+  };
 
   useEffect(() => {
     // Small delay to allow hydration
@@ -49,7 +62,7 @@ export function ProtectedRoute({
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, requiredPermission, requiredRole, requiredRoles, router, hasPermission, hasRole, hasAnyRole]);
+  }, [isAuthenticated, user, requiredPermission, requiredRole, requiredRoles, router]);
 
   if (isChecking) {
     return (

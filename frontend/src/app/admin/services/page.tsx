@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useServices, useCreateService, useUpdateService } from "@/hooks/use-services";
+import { useWorkflows } from "@/hooks/use-workflows";
+import { useDocumentRequirements } from "@/hooks/use-documents";
+import { useQuestions } from "@/hooks/use-questions";
 import {
   Card,
   CardContent,
@@ -14,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -32,38 +36,108 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileBox, Plus, Edit, Eye } from "lucide-react";
 import { Service } from "@/types";
 
 export default function AdminServicesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [formData, setFormData] = useState({
+  const [createFormData, setCreateFormData] = useState({
+    name: "",
+    description: "",
+    workflowId: "",
+    documentRequirements: [] as Array<{ id: string; isRequired: boolean }>,
+    questionIds: [] as string[],
+  });
+
+  const [docSearch, setDocSearch] = useState("");
+  const [questionSearch, setQuestionSearch] = useState("");
+
+  const [editFormData, setEditFormData] = useState({
     name: "",
     description: "",
   });
 
   const { data: services, isLoading } = useServices();
+  const { data: workflows, isLoading: isLoadingWorkflows } = useWorkflows();
+  const { data: documentRequirements, isLoading: isLoadingDocs } = useDocumentRequirements();
+  const { data: questions, isLoading: isLoadingQuestions } = useQuestions({ activeOnly: true, limit: 1000, page: 1 });
   const createService = useCreateService();
   const updateService = useUpdateService();
 
+  const resetCreateForm = () => {
+    setCreateFormData({
+      name: "",
+      description: "",
+      workflowId: "",
+      documentRequirements: [],
+      questionIds: [],
+    });
+    setDocSearch("");
+    setQuestionSearch("");
+  };
+
   const handleCreate = () => {
-    createService.mutate(formData, {
+    if (!createFormData.name || !createFormData.workflowId) return;
+    createService.mutate(createFormData, {
       onSuccess: () => {
         setIsCreateDialogOpen(false);
-        setFormData({ name: "", description: "" });
+        resetCreateForm();
       },
     });
+  };
+
+  const isDocSelected = (id: string) =>
+    createFormData.documentRequirements.some((d) => d.id === id);
+
+  const getDocIsRequired = (id: string) =>
+    createFormData.documentRequirements.find((d) => d.id === id)?.isRequired ?? true;
+
+  const toggleDocSelected = (id: string) => {
+    setCreateFormData((prev) => {
+      const exists = prev.documentRequirements.some((d) => d.id === id);
+      if (exists) {
+        return {
+          ...prev,
+          documentRequirements: prev.documentRequirements.filter((d) => d.id !== id),
+        };
+      }
+      return {
+        ...prev,
+        documentRequirements: [...prev.documentRequirements, { id, isRequired: true }],
+      };
+    });
+  };
+
+  const setDocRequired = (id: string, isRequired: boolean) => {
+    setCreateFormData((prev) => ({
+      ...prev,
+      documentRequirements: prev.documentRequirements.map((d) =>
+        d.id === id ? { ...d, isRequired } : d
+      ),
+    }));
+  };
+
+  const toggleSelectedId = (current: string[], id: string) => {
+    if (current.includes(id)) return current.filter((x) => x !== id);
+    return [...current, id];
   };
 
   const handleUpdate = () => {
     if (!editingService) return;
     updateService.mutate(
-      { id: editingService.id, data: formData },
+      { id: editingService.id, data: editFormData },
       {
         onSuccess: () => {
           setEditingService(null);
-          setFormData({ name: "", description: "" });
+          setEditFormData({ name: "", description: "" });
         },
       }
     );
@@ -72,7 +146,7 @@ export default function AdminServicesPage() {
   const toggleServiceStatus = (service: Service) => {
     updateService.mutate({
       id: service.id,
-      data: { isActive: !service.isActive },
+      data: { is_active: !service.is_active },
     });
   };
 
@@ -83,7 +157,13 @@ export default function AdminServicesPage() {
           <h1 className="text-3xl font-bold">Quản lý Dịch vụ</h1>
           <p className="text-gray-600">Cấu hình các dịch vụ trong hệ thống</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog
+          open={isCreateDialogOpen}
+          onOpenChange={(open) => {
+            setIsCreateDialogOpen(open);
+            if (!open) resetCreateForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -99,11 +179,48 @@ export default function AdminServicesPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label>Workflow *</Label>
+                <Select
+                  value={createFormData.workflowId}
+                  onValueChange={(v) =>
+                    setCreateFormData((prev) => ({ ...prev, workflowId: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        isLoadingWorkflows
+                          ? "Đang tải workflow..."
+                          : "Chọn workflow"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(workflows || [])
+                      .filter((w) => w.is_active && (w._count?.stages ?? 0) > 0)
+                      .map((w) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}
+                          {typeof w.version === "number" ? ` (v${w.version})` : ""}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {!isLoadingWorkflows &&
+                  (workflows || []).filter(
+                    (w) => w.is_active && (w._count?.stages ?? 0) > 0
+                  ).length === 0 && (
+                  <p className="text-xs text-amber-600">
+                    Chưa có workflow hoạt động và đã cấu hình stage. Hãy tạo/cấu hình workflow trước khi tạo dịch vụ.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label>Tên dịch vụ</Label>
                 <Input
-                  value={formData.name}
+                  value={createFormData.name}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    setCreateFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
                   placeholder="VD: Vay tín chấp"
                 />
@@ -111,15 +228,143 @@ export default function AdminServicesPage() {
               <div className="space-y-2">
                 <Label>Mô tả</Label>
                 <Textarea
-                  value={formData.description}
+                  value={createFormData.description}
                   onChange={(e) =>
-                    setFormData((prev) => ({
+                    setCreateFormData((prev) => ({
                       ...prev,
                       description: e.target.value,
                     }))
                   }
                   placeholder="Mô tả chi tiết về dịch vụ..."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Tài liệu cần thiết</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Đã chọn: {createFormData.documentRequirements.length}
+                  </span>
+                </div>
+                <Input
+                  value={docSearch}
+                  onChange={(e) => setDocSearch(e.target.value)}
+                  placeholder={isLoadingDocs ? "Đang tải tài liệu..." : "Tìm theo tên / mã"}
+                />
+                <div className="max-h-44 overflow-auto rounded-md border p-2">
+                  {isLoadingDocs ? (
+                    <p className="text-sm text-muted-foreground">Đang tải...</p>
+                  ) : (documentRequirements || []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa có tài liệu nào.</p>
+                  ) : (
+                    (documentRequirements || [])
+                      .filter((d) => d.is_active)
+                      .filter((d) => {
+                        const term = docSearch.trim().toLowerCase();
+                        if (!term) return true;
+                        return (
+                          d.name.toLowerCase().includes(term) ||
+                          d.code.toLowerCase().includes(term)
+                        );
+                      })
+                      .map((d) => {
+                        const checked = isDocSelected(d.id);
+                        const requiredValue = getDocIsRequired(d.id) ? "required" : "optional";
+                        return (
+                          <label
+                            key={d.id}
+                            className="flex items-start justify-between gap-3 rounded px-2 py-1 hover:bg-muted"
+                          >
+                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                              <Checkbox checked={checked} onCheckedChange={() => toggleDocSelected(d.id)} />
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium">{d.name}</div>
+                                <div className="truncate text-xs text-muted-foreground">
+                                  {d.code} • v{d.version}
+                                </div>
+                              </div>
+                            </div>
+
+                            {checked ? (
+                              <Select
+                                value={requiredValue}
+                                onValueChange={(v) => setDocRequired(d.id, v === "required")}
+                              >
+                                <SelectTrigger className="h-8 w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="required">Bắt buộc</SelectItem>
+                                  <SelectItem value="optional">Tùy chọn</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <div className="h-8 w-32" />
+                            )}
+                          </label>
+                        );
+                      })
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Với mỗi dịch vụ, bạn có thể chọn tài liệu Bắt buộc hoặc Tùy chọn.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Câu hỏi cần thiết</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Đã chọn: {createFormData.questionIds.length}
+                  </span>
+                </div>
+                <Input
+                  value={questionSearch}
+                  onChange={(e) => setQuestionSearch(e.target.value)}
+                  placeholder={
+                    isLoadingQuestions ? "Đang tải câu hỏi..." : "Tìm theo nội dung"
+                  }
+                />
+                <div className="max-h-44 overflow-auto rounded-md border p-2">
+                  {isLoadingQuestions ? (
+                    <p className="text-sm text-muted-foreground">Đang tải...</p>
+                  ) : (questions || []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Chưa có câu hỏi nào.</p>
+                  ) : (
+                    (questions || [])
+                      .filter((q) => q.is_active)
+                      .filter((q) => {
+                        const term = questionSearch.trim().toLowerCase();
+                        if (!term) return true;
+                        return q.content.toLowerCase().includes(term);
+                      })
+                      .map((q) => {
+                        const checked = createFormData.questionIds.includes(q.id);
+                        return (
+                          <label
+                            key={q.id}
+                            className="flex cursor-pointer items-start gap-2 rounded px-2 py-1 hover:bg-muted"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() =>
+                                setCreateFormData((prev) => ({
+                                  ...prev,
+                                  questionIds: toggleSelectedId(prev.questionIds, q.id),
+                                }))
+                              }
+                            />
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-medium">{q.content}</div>
+                              <div className="truncate text-xs text-muted-foreground">
+                                {q.type}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })
+                  )}
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -129,7 +374,14 @@ export default function AdminServicesPage() {
               >
                 Hủy
               </Button>
-              <Button onClick={handleCreate} disabled={createService.isPending}>
+              <Button
+                onClick={handleCreate}
+                disabled={
+                  createService.isPending ||
+                  !createFormData.name ||
+                  !createFormData.workflowId
+                }
+              >
                 {createService.isPending ? "Đang tạo..." : "Tạo dịch vụ"}
               </Button>
             </DialogFooter>
@@ -173,15 +425,15 @@ export default function AdminServicesPage() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={service.isActive ? "success" : "secondary"}
+                        variant={service.is_active ? "success" : "secondary"}
                         className="cursor-pointer"
                         onClick={() => toggleServiceStatus(service)}
                       >
-                        {service.isActive ? "Hoạt động" : "Tạm dừng"}
+                        {service.is_active ? "Hoạt động" : "Tạm dừng"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(service.createdAt).toLocaleDateString("vi-VN")}
+                      {new Date(service.created_at).toLocaleDateString("vi-VN")}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -189,8 +441,17 @@ export default function AdminServicesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
+                            window.location.href = `/admin/services/${service.id}`;
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
                             setEditingService(service);
-                            setFormData({
+                            setEditFormData({
                               name: service.name,
                               description: service.description,
                             });
@@ -219,7 +480,7 @@ export default function AdminServicesPage() {
         onOpenChange={(open) => {
           if (!open) {
             setEditingService(null);
-            setFormData({ name: "", description: "" });
+            setEditFormData({ name: "", description: "" });
           }
         }}
       >
@@ -232,18 +493,18 @@ export default function AdminServicesPage() {
             <div className="space-y-2">
               <Label>Tên dịch vụ</Label>
               <Input
-                value={formData.name}
+                value={editFormData.name}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  setEditFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
               />
             </div>
             <div className="space-y-2">
               <Label>Mô tả</Label>
               <Textarea
-                value={formData.description}
+                value={editFormData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({
+                  setEditFormData((prev) => ({
                     ...prev,
                     description: e.target.value,
                   }))
@@ -256,7 +517,7 @@ export default function AdminServicesPage() {
               variant="outline"
               onClick={() => {
                 setEditingService(null);
-                setFormData({ name: "", description: "" });
+                setEditFormData({ name: "", description: "" });
               }}
             >
               Hủy

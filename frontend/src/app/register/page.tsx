@@ -14,15 +14,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
+    fullname: "",
+    gender: "MALE" as "MALE" | "FEMALE" | "OTHER",
+    birthDate: "",
     referralCode: "",
   });
 
@@ -32,6 +40,13 @@ export default function RegisterPage() {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      gender: value as "MALE" | "FEMALE" | "OTHER",
     }));
   };
 
@@ -60,29 +75,16 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Họ</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  placeholder="Nguyễn"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Tên</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  placeholder="Văn A"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullname">Họ và tên</Label>
+              <Input
+                id="fullname"
+                name="fullname"
+                placeholder="Nguyễn Văn A"
+                value={formData.fullname}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -109,6 +111,33 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Giới tính</Label>
+                <Select value={formData.gender} onValueChange={handleSelectChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn giới tính" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Nam</SelectItem>
+                    <SelectItem value="FEMALE">Nữ</SelectItem>
+                    <SelectItem value="OTHER">Khác</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthDate">Ngày sinh</Label>
+                <Input
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useAdminContracts,
-  useAdminTransitionContract,
 } from "@/hooks/use-contracts";
+import { useServices } from "@/hooks/use-services";
+import { useWorkflows, useWorkflow } from "@/hooks/use-workflows";
 import {
   Card,
   CardContent,
@@ -13,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -30,33 +31,67 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Eye } from "lucide-react";
+import { FileText, Eye, Search, X, Filter } from "lucide-react";
 import Link from "next/link";
-import { ContractStatus } from "@/types";
+import { StageBadge } from "@/components/ui/stage-badge";
 
 export default function AdminContractsPage() {
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<ContractStatus | "all">("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Get services for filter dropdown
+  const { data: services } = useServices();
+
+  // Get selected service to find its workflow
+  const selectedService = useMemo(() => {
+    if (serviceFilter === "all" || !services) return null;
+    return services.find(s => s.id === serviceFilter);
+  }, [serviceFilter, services]);
+
+  // Get workflow for selected service to get stages
+  const { data: workflow } = useWorkflow(selectedService?.workflow_id || "");
+
+  // Stages for the selected service's workflow
+  const availableStages = useMemo(() => {
+    if (!workflow?.stages) return [];
+    return workflow.stages.sort((a, b) => a.stage_order - b.stage_order);
+  }, [workflow?.stages]);
+
+  // Reset stage filter when service changes
+  useEffect(() => {
+    setStageFilter("all");
+    setPage(1);
+  }, [serviceFilter]);
 
   const { data: contracts, isLoading } = useAdminContracts({
     page,
     limit: 10,
-    ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(serviceFilter !== "all" && { serviceId: serviceFilter }),
+    ...(stageFilter !== "all" && { stageId: stageFilter }),
+    ...(debouncedSearch && { search: debouncedSearch }),
   });
 
-  const getStatusBadge = (status: ContractStatus, stageName?: string) => {
-    const variants: Record<ContractStatus, "default" | "secondary" | "success" | "destructive" | "warning"> = {
-      ACTIVE: "secondary",
-      COMPLETED: "success",
-      CANCELLED: "destructive",
-      REJECTED: "destructive",
-    };
-    return (
-      <Badge variant={variants[status]}>
-        {stageName || status}
-      </Badge>
-    );
+  const clearFilters = () => {
+    setServiceFilter("all");
+    setStageFilter("all");
+    setSearchQuery("");
+    setDebouncedSearch("");
+    setPage(1);
   };
+
+  const hasActiveFilters = serviceFilter !== "all" || stageFilter !== "all" || searchQuery !== "";
 
   return (
     <div className="space-y-6">
@@ -67,31 +102,84 @@ export default function AdminContractsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Danh sách Hồ sơ</CardTitle>
-              <CardDescription>
-                Tổng cộng {contracts?.total || 0} hồ sơ
-              </CardDescription>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Danh sách Hồ sơ</CardTitle>
+                <CardDescription>
+                  Tổng cộng {contracts?.meta?.total || 0} hồ sơ
+                </CardDescription>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-1" />
+                  Xóa bộ lọc
+                </Button>
+              )}
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value as ContractStatus | "all");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Lọc theo trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="ACTIVE">Đang xử lý</SelectItem>
-                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-                <SelectItem value="REJECTED">Từ chối</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Filters Row */}
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Search Input */}
+              <div className="relative flex-1 min-w-[250px]">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Tìm theo mã hồ sơ, email, SĐT, họ tên..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Service Filter */}
+              <Select
+                value={serviceFilter}
+                onValueChange={(value) => {
+                  setServiceFilter(value);
+                }}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <Filter className="w-4 h-4 mr-2 text-gray-400" />
+                  <SelectValue placeholder="Loại dịch vụ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả dịch vụ</SelectItem>
+                  {services?.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Stage Filter - Only show when service is selected */}
+              <Select
+                value={stageFilter}
+                onValueChange={(value) => {
+                  setStageFilter(value);
+                  setPage(1);
+                }}
+                disabled={serviceFilter === "all"}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder={serviceFilter === "all" ? "Chọn dịch vụ trước" : "Trạng thái"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  {availableStages.map((stage) => (
+                    <SelectItem key={stage.id} value={stage.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: stage.color || "#6B7280" }}
+                        />
+                        {stage.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -106,8 +194,8 @@ export default function AdminContractsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>User</TableHead>
+                    <TableHead>Mã hồ sơ</TableHead>
+                    <TableHead>Khách hàng</TableHead>
                     <TableHead>Dịch vụ</TableHead>
                     <TableHead>Ngày tạo</TableHead>
                     <TableHead>Trạng thái</TableHead>
@@ -117,22 +205,28 @@ export default function AdminContractsPage() {
                 <TableBody>
                   {contracts.data.map((contract) => (
                     <TableRow key={contract.id}>
-                      <TableCell className="font-medium">
-                        #{contract.id}
+                      <TableCell className="font-medium font-mono">
+                        {contract.contract_number || `#${contract.id.slice(0, 8)}`}
                       </TableCell>
                       <TableCell>
-                        {contract.user?.firstName} {contract.user?.lastName}
-                        <br />
-                        <span className="text-sm text-gray-500">
-                          {contract.user?.email}
-                        </span>
+                        <div className="space-y-1">
+                          <div className="font-medium">{contract.user?.fullname || "N/A"}</div>
+                          <div className="text-sm text-gray-500">
+                            {contract.user?.email}
+                          </div>
+                          {contract.user?.phone && (
+                            <div className="text-sm text-gray-500">
+                              {contract.user?.phone}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{contract.service?.name}</TableCell>
                       <TableCell>
-                        {new Date(contract.createdAt).toLocaleDateString("vi-VN")}
+                        {new Date(contract.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(contract.status, contract.currentStage?.name)}
+                        <StageBadge stage={contract.stage} />
                       </TableCell>
                       <TableCell>
                         <Link href={`/admin/contracts/${contract.id}`}>
@@ -155,12 +249,12 @@ export default function AdminContractsPage() {
                   Trang trước
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Trang {page} / {Math.ceil((contracts.total || 0) / 10)}
+                  Trang {page} / {contracts.meta?.totalPages || 1}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil((contracts.total || 0) / 10)}
+                  disabled={!contracts.meta?.hasNextPage}
                 >
                   Trang sau
                 </Button>
@@ -170,6 +264,11 @@ export default function AdminContractsPage() {
             <div className="text-center py-12 text-gray-500">
               <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>Không có hồ sơ nào</p>
+              {hasActiveFilters && (
+                <p className="text-sm mt-2">
+                  Thử xóa bộ lọc để xem tất cả hồ sơ
+                </p>
+              )}
             </div>
           )}
         </CardContent>

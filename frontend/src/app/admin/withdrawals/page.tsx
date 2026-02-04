@@ -46,7 +46,7 @@ export default function AdminWithdrawalsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<WithdrawalStatus | "all">("all");
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
-  const [processAction, setProcessAction] = useState<"APPROVE" | "REJECT" | null>(null);
+  const [processAction, setProcessAction] = useState<WithdrawalStatus | null>(null);
   const [processNote, setProcessNote] = useState("");
 
   const { data: withdrawals, isLoading } = useAdminWithdrawals({
@@ -64,8 +64,8 @@ export default function AdminWithdrawalsPage() {
       {
         id: selectedWithdrawal.id,
         data: {
-          action: processAction,
-          ...(processNote && { note: processNote }),
+          status: processAction,
+          ...(processNote && { adminNote: processNote }),
         },
       },
       {
@@ -81,17 +81,15 @@ export default function AdminWithdrawalsPage() {
   const getStatusBadge = (status: WithdrawalStatus) => {
     const variants: Record<WithdrawalStatus, "default" | "secondary" | "success" | "destructive" | "warning"> = {
       PENDING: "warning",
-      PROCESSING: "secondary",
-      COMPLETED: "success",
-      FAILED: "destructive",
-      CANCELLED: "destructive",
+      APPROVED: "secondary",
+      PAID: "success",
+      REJECTED: "destructive",
     };
     const labels: Record<WithdrawalStatus, string> = {
-      PENDING: "Chờ xử lý",
-      PROCESSING: "Đang xử lý",
-      COMPLETED: "Hoàn thành",
-      FAILED: "Thất bại",
-      CANCELLED: "Đã hủy",
+      PENDING: "Chờ duyệt",
+      APPROVED: "Đã duyệt",
+      PAID: "Đã thanh toán",
+      REJECTED: "Từ chối",
     };
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
@@ -109,7 +107,7 @@ export default function AdminWithdrawalsPage() {
             <div>
               <CardTitle>Danh sách yêu cầu rút tiền</CardTitle>
               <CardDescription>
-                Tổng cộng {withdrawals?.total || 0} yêu cầu
+                Tổng cộng {withdrawals?.meta?.total || 0} yêu cầu
               </CardDescription>
             </div>
             <Select
@@ -124,11 +122,10 @@ export default function AdminWithdrawalsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="PENDING">Chờ xử lý</SelectItem>
-                <SelectItem value="PROCESSING">Đang xử lý</SelectItem>
-                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-                <SelectItem value="FAILED">Thất bại</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                <SelectItem value="PENDING">Chờ duyệt</SelectItem>
+                <SelectItem value="APPROVED">Đã duyệt</SelectItem>
+                <SelectItem value="PAID">Đã thanh toán</SelectItem>
+                <SelectItem value="REJECTED">Từ chối</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -159,10 +156,10 @@ export default function AdminWithdrawalsPage() {
                   {withdrawals.data.map((withdrawal) => (
                     <TableRow key={withdrawal.id}>
                       <TableCell className="font-medium">
-                        #{withdrawal.id}
+                        #{withdrawal.id.slice(0, 8)}
                       </TableCell>
                       <TableCell>
-                        {withdrawal.user?.firstName} {withdrawal.user?.lastName}
+                        {withdrawal.user?.fullname}
                         <br />
                         <span className="text-sm text-gray-500">
                           {withdrawal.user?.email}
@@ -171,16 +168,30 @@ export default function AdminWithdrawalsPage() {
                       <TableCell className="font-medium">
                         {parseFloat(withdrawal.amount).toLocaleString("vi-VN")} VNĐ
                       </TableCell>
-                      <TableCell>{withdrawal.bankName}</TableCell>
                       <TableCell>
-                        {withdrawal.bankAccountNumber}
-                        <br />
-                        <span className="text-sm text-gray-500">
-                          {withdrawal.bankAccountName}
-                        </span>
+                        {withdrawal.method === 'BANKING' ? withdrawal.account_info?.bankName : 'Crypto'}
                       </TableCell>
                       <TableCell>
-                        {new Date(withdrawal.createdAt).toLocaleDateString("vi-VN")}
+                        {withdrawal.method === 'BANKING' ? (
+                          <>
+                            {withdrawal.account_info?.accountNumber}
+                            <br />
+                            <span className="text-sm text-gray-500">
+                              {withdrawal.account_info?.accountHolder}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {withdrawal.account_info?.cryptoAddress?.slice(0, 10)}...
+                            <br />
+                            <span className="text-sm text-gray-500">
+                              {withdrawal.account_info?.cryptoNetwork}
+                            </span>
+                          </>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(withdrawal.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell>{getStatusBadge(withdrawal.status)}</TableCell>
                       <TableCell>
@@ -191,7 +202,7 @@ export default function AdminWithdrawalsPage() {
                               variant="default"
                               onClick={() => {
                                 setSelectedWithdrawal(withdrawal);
-                                setProcessAction("APPROVE");
+                                setProcessAction(WithdrawalStatus.APPROVED);
                               }}
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
@@ -202,13 +213,26 @@ export default function AdminWithdrawalsPage() {
                               variant="destructive"
                               onClick={() => {
                                 setSelectedWithdrawal(withdrawal);
-                                setProcessAction("REJECT");
+                                setProcessAction(WithdrawalStatus.REJECTED);
                               }}
                             >
                               <XCircle className="w-4 h-4 mr-1" />
                               Từ chối
                             </Button>
                           </div>
+                        )}
+                        {withdrawal.status === WithdrawalStatus.APPROVED && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => {
+                              setSelectedWithdrawal(withdrawal);
+                              setProcessAction(WithdrawalStatus.PAID);
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Đã thanh toán
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -224,12 +248,12 @@ export default function AdminWithdrawalsPage() {
                   Trang trước
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Trang {page} / {Math.ceil((withdrawals.total || 0) / 10)}
+                  Trang {page} / {withdrawals.meta?.totalPages || 1}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil((withdrawals.total || 0) / 10)}
+                  disabled={!withdrawals.meta?.hasNextPage}
                 >
                   Trang sau
                 </Button>
@@ -258,12 +282,14 @@ export default function AdminWithdrawalsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {processAction === "APPROVE" ? "Duyệt yêu cầu rút tiền" : "Từ chối yêu cầu rút tiền"}
+              {processAction === WithdrawalStatus.APPROVED && "Duyệt yêu cầu rút tiền"}
+              {processAction === WithdrawalStatus.REJECTED && "Từ chối yêu cầu rút tiền"}
+              {processAction === WithdrawalStatus.PAID && "Xác nhận đã thanh toán"}
             </DialogTitle>
             <DialogDescription>
-              {processAction === "APPROVE"
-                ? "Bạn có chắc chắn muốn duyệt yêu cầu rút tiền này?"
-                : "Bạn có chắc chắn muốn từ chối yêu cầu rút tiền này?"}
+              {processAction === WithdrawalStatus.APPROVED && "Bạn có chắc chắn muốn duyệt yêu cầu rút tiền này?"}
+              {processAction === WithdrawalStatus.REJECTED && "Bạn có chắc chắn muốn từ chối yêu cầu rút tiền này?"}
+              {processAction === WithdrawalStatus.PAID && "Bạn có chắc chắn đã thanh toán cho yêu cầu này?"}
             </DialogDescription>
           </DialogHeader>
           {selectedWithdrawal && (
@@ -274,14 +300,30 @@ export default function AdminWithdrawalsPage() {
                   {parseFloat(selectedWithdrawal.amount).toLocaleString("vi-VN")} VNĐ
                 </p>
                 <p>
-                  <strong>Ngân hàng:</strong> {selectedWithdrawal.bankName}
+                  <strong>Phương thức:</strong> {selectedWithdrawal.method === 'BANKING' ? 'Chuyển khoản ngân hàng' : 'Crypto'}
                 </p>
-                <p>
-                  <strong>Số TK:</strong> {selectedWithdrawal.bankAccountNumber}
-                </p>
-                <p>
-                  <strong>Chủ TK:</strong> {selectedWithdrawal.bankAccountName}
-                </p>
+                {selectedWithdrawal.method === 'BANKING' ? (
+                  <>
+                    <p>
+                      <strong>Ngân hàng:</strong> {selectedWithdrawal.account_info?.bankName}
+                    </p>
+                    <p>
+                      <strong>Số TK:</strong> {selectedWithdrawal.account_info?.accountNumber}
+                    </p>
+                    <p>
+                      <strong>Chủ TK:</strong> {selectedWithdrawal.account_info?.accountHolder}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      <strong>Địa chỉ:</strong> {selectedWithdrawal.account_info?.cryptoAddress}
+                    </p>
+                    <p>
+                      <strong>Mạng:</strong> {selectedWithdrawal.account_info?.cryptoNetwork}
+                    </p>
+                  </>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Ghi chú (tùy chọn)</label>
@@ -305,14 +347,16 @@ export default function AdminWithdrawalsPage() {
               Hủy
             </Button>
             <Button
-              variant={processAction === "APPROVE" ? "default" : "destructive"}
+              variant={processAction === WithdrawalStatus.REJECTED ? "destructive" : "default"}
               onClick={handleProcess}
               disabled={processWithdrawal.isPending}
             >
               {processWithdrawal.isPending
                 ? "Đang xử lý..."
-                : processAction === "APPROVE"
+                : processAction === WithdrawalStatus.APPROVED
                 ? "Duyệt"
+                : processAction === WithdrawalStatus.PAID
+                ? "Xác nhận đã thanh toán"
                 : "Từ chối"}
             </Button>
           </DialogFooter>

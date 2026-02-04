@@ -14,19 +14,24 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { FileBox, ArrowRight, FileText, CheckCircle } from "lucide-react";
+import { useEffect } from "react";
 
 export default function NewContractPage() {
   const router = useRouter();
   const { data: services, isLoading } = useServices();
   const createContract = useCreateContract();
 
-  const handleSelectService = (serviceId: number) => {
+  const handleSelectService = (serviceId: string) => {
     createContract.mutate(serviceId, {
       onSuccess: (contract) => {
         router.push(`/dashboard/contracts/${contract.id}`);
       },
     });
   };
+
+  useEffect(() => {
+    console.log("Services: ", services)
+  },[services])
 
   return (
     <div className="space-y-6">
@@ -52,7 +57,7 @@ export default function NewContractPage() {
       ) : services && services.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services
-            .filter((s) => s.isActive)
+            .filter((s) => s.is_active)
             .map((service) => (
               <Card
                 key={service.id}
@@ -70,12 +75,12 @@ export default function NewContractPage() {
                   <div className="space-y-4">
                     {/* Service Info */}
                     <div className="text-sm text-gray-600 space-y-2">
-                      {service.documentRequirements &&
-                        service.documentRequirements.length > 0 && (
+                      {service.documents &&
+                        service.documents.length > 0 && (
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4" />
                             <span>
-                              {service.documentRequirements.length} tài liệu yêu
+                              {service.documents.length} tài liệu yêu
                               cầu
                             </span>
                           </div>

@@ -1,33 +1,38 @@
 export interface DocumentRequirement {
-  id: number;
+  id: string;
+  code: string;
   name: string;
-  description: string | null;
-  isRequired: boolean;
-  maxFiles: number;
-  allowedFormats: string[];
-  maxSizeBytes: number;
-  createdAt: string;
-  updatedAt: string;
+  version: number;
+  description?: string | null;
+  config: {
+    maxFiles: number;
+    minFiles?: number;
+    allowedTypes: string[];
+    maxSizeBytes: number;
+  };
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface ContractDocument {
-  id: number;
-  contractId: number;
-  documentRequirementId: number;
+  id: string;
+  contract_id: string;
+  document_requirement_id: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
-  reviewedBy: number | null;
-  reviewedAt: string | null;
-  reviewNote: string | null;
-  createdAt: string;
-  updatedAt: string;
+  review_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  updated_at: string;
 
-  documentRequirement?: DocumentRequirement;
+  document_requirement?: DocumentRequirement;
   files?: DocumentFile[];
 }
 
 export interface DocumentFile {
-  id: number;
-  contractDocumentId: number;
+  id: string;
+  contractDocumentId: string;
   fileName: string;
   filePath: string;
   fileSize: number;
@@ -41,19 +46,24 @@ export interface ReviewDocumentRequest {
 }
 
 export interface CreateDocumentRequirementRequest {
+  code: string;
   name: string;
-  description?: string;
-  isRequired: boolean;
-  maxFiles: number;
-  allowedFormats: string[];
-  maxSizeBytes: number;
+  config: {
+    maxFiles: number;
+    minFiles?: number;
+    allowedTypes: string[];
+    maxSizeBytes: number;
+    expirationDays?: number;
+  };
 }
 
 export interface UpdateDocumentRequirementRequest {
   name?: string;
-  description?: string;
-  isRequired?: boolean;
-  maxFiles?: number;
-  allowedFormats?: string[];
-  maxSizeBytes?: number;
+  config?: {
+    maxFiles?: number;
+    minFiles?: number;
+    allowedTypes?: string[];
+    maxSizeBytes?: number;
+    expirationDays?: number;
+  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useContracts } from "@/hooks/use-contracts";
 import {
@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -29,31 +28,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileText, Plus, Eye } from "lucide-react";
-import { ContractStatus } from "@/types";
+import { StageBadge } from "@/components/ui/stage-badge";
+import { WorkflowStage } from "@/types";
 
 export default function ContractsPage() {
   const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<ContractStatus | "all">("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
 
   const { data: contracts, isLoading } = useContracts({
     page,
     limit: 10,
-    ...(statusFilter !== "all" && { status: statusFilter }),
+    ...(stageFilter !== "all" && { stageCode: stageFilter }),
   });
 
-  const getStatusBadge = (status: ContractStatus, stageName?: string) => {
-    const variants: Record<ContractStatus, "default" | "secondary" | "success" | "destructive" | "warning"> = {
-      ACTIVE: "secondary",
-      COMPLETED: "success",
-      CANCELLED: "destructive",
-      REJECTED: "destructive",
-    };
-    return (
-      <Badge variant={variants[status]}>
-        {stageName || status}
-      </Badge>
-    );
-  };
+  // Extract unique stages from user's contracts for filter dropdown
+  const uniqueStages = useMemo(() => {
+    if (!contracts?.data) return [];
+    const stageMap = new Map<string, WorkflowStage>();
+    contracts.data.forEach(contract => {
+      if (contract.stage?.code && !stageMap.has(contract.stage.code)) {
+        stageMap.set(contract.stage.code, contract.stage);
+      }
+    });
+    return Array.from(stageMap.values()).sort((a, b) => a.stage_order - b.stage_order);
+  }, [contracts?.data]);
 
   return (
     <div className="space-y-6">
@@ -78,21 +76,28 @@ export default function ContractsPage() {
               <CardDescription>Tất cả các hồ sơ đã nộp</CardDescription>
             </div>
             <Select
-              value={statusFilter}
+              value={stageFilter}
               onValueChange={(value) => {
-                setStatusFilter(value as ContractStatus | "all");
+                setStageFilter(value);
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Lọc theo trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="ACTIVE">Đang xử lý</SelectItem>
-                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-                <SelectItem value="REJECTED">Từ chối</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                {uniqueStages.map((stage) => (
+                  <SelectItem key={stage.code} value={stage.code || ""}>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: stage.color || "#6B7280" }}
+                      />
+                      {stage.name}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -126,10 +131,10 @@ export default function ContractsPage() {
                         {contract.service?.name || "Dịch vụ"}
                       </TableCell>
                       <TableCell>
-                        {new Date(contract.createdAt).toLocaleDateString("vi-VN")}
+                        {new Date(contract.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(contract.status, contract.currentStage?.name)}
+                        <StageBadge stage={contract.stage} />
                       </TableCell>
                       <TableCell>
                         <Link href={`/dashboard/contracts/${contract.id}`}>
@@ -152,12 +157,12 @@ export default function ContractsPage() {
                   Trang trước
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Trang {page} / {Math.ceil((contracts.total || 0) / 10)}
+                  Trang {page} / {Math.ceil((contracts.meta?.total || 0) / 10)}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil((contracts.total || 0) / 10)}
+                  disabled={page >= Math.ceil((contracts.meta?.total || 0) / 10)}
                 >
                   Trang sau
                 </Button>

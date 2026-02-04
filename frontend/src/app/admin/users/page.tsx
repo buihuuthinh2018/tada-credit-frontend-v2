@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useAdminUsers,
   useVerifyUser,
@@ -36,20 +36,45 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Users, Search, MoreHorizontal, Eye, CheckCircle, XCircle, Play } from "lucide-react";
 import Link from "next/link";
+import { CopyableId } from "@/components/ui/copyable-id";
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { data: users, isLoading } = useAdminUsers({
     page,
     limit: 10,
-    ...(search && { search }),
+    ...(debouncedSearch && { search: debouncedSearch }),
   });
 
   const verifyUser = useVerifyUser();
   const suspendUser = useSuspendUser();
   const activateUser = useActivateUser();
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "success" | "warning" | "destructive"> = {
+      ACTIVE: "success",
+      PENDING_VERIFY: "warning",
+      SUSPENDED: "destructive",
+    };
+    const labels: Record<string, string> = {
+      ACTIVE: "Hoạt động",
+      PENDING_VERIFY: "Chờ xác minh",
+      SUSPENDED: "Đã khóa",
+    };
+    return <Badge variant={variants[status] || "default"}>{labels[status] || status}</Badge>;
+  };
 
   return (
     <div className="space-y-6">
@@ -66,20 +91,17 @@ export default function AdminUsersPage() {
             <div>
               <CardTitle>Danh sách Users</CardTitle>
               <CardDescription>
-                Tổng cộng {users?.total || 0} người dùng
+                Tổng cộng {users?.meta?.total || 0} người dùng
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
-                  placeholder="Tìm kiếm..."
-                  className="pl-8 w-64"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
+                  placeholder="Tìm theo ID, tên, email, SĐT..."
+                  className="pl-8 w-72"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                 />
               </div>
             </div>
@@ -97,6 +119,7 @@ export default function AdminUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">STT</TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Họ tên</TableHead>
                     <TableHead>Email</TableHead>
@@ -108,39 +131,33 @@ export default function AdminUsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.data.map((user) => (
+                  {users.data.map((user, index) => (
                     <TableRow key={user.id}>
-                      <TableCell className="font-medium">#{user.id}</TableCell>
+                      <TableCell className="font-medium text-gray-500">
+                        {(page - 1) * 10 + index + 1}
+                      </TableCell>
                       <TableCell>
-                        {user.firstName} {user.lastName}
+                        <CopyableId id={user.id} maxLength={8} />
+                      </TableCell>
+                      <TableCell>
+                        {user.fullname}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
-                          {user.roles?.map((role) => (
-                            <Badge key={role.id} variant="secondary">
+                          {user.roles?.map((role, roleIndex) => (
+                            <Badge key={role.id || roleIndex} variant="secondary">
                               {role.name}
                             </Badge>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          {user.isVerified ? (
-                            <Badge variant="success">Đã xác minh</Badge>
-                          ) : (
-                            <Badge variant="warning">Chưa xác minh</Badge>
-                          )}
-                          {user.isActive ? (
-                            <Badge variant="default">Hoạt động</Badge>
-                          ) : (
-                            <Badge variant="destructive">Đã khóa</Badge>
-                          )}
-                        </div>
+                        {getStatusBadge(user.status)}
                       </TableCell>
                       <TableCell>
-                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                        {new Date(user.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -158,7 +175,7 @@ export default function AdminUsersPage() {
                                 Xem chi tiết
                               </Link>
                             </DropdownMenuItem>
-                            {!user.isVerified && (
+                            {user.status === 'PENDING_VERIFY' && (
                               <DropdownMenuItem
                                 onClick={() => verifyUser.mutate(user.id)}
                               >
@@ -166,7 +183,7 @@ export default function AdminUsersPage() {
                                 Xác minh
                               </DropdownMenuItem>
                             )}
-                            {user.isActive ? (
+                            {user.status === 'ACTIVE' ? (
                               <DropdownMenuItem
                                 onClick={() => suspendUser.mutate(user.id)}
                                 className="text-red-600"
@@ -174,14 +191,14 @@ export default function AdminUsersPage() {
                                 <XCircle className="w-4 h-4 mr-2" />
                                 Đình chỉ
                               </DropdownMenuItem>
-                            ) : (
+                            ) : user.status === 'SUSPENDED' ? (
                               <DropdownMenuItem
                                 onClick={() => activateUser.mutate(user.id)}
                               >
                                 <Play className="w-4 h-4 mr-2" />
                                 Kích hoạt
                               </DropdownMenuItem>
-                            )}
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -198,12 +215,12 @@ export default function AdminUsersPage() {
                   Trang trước
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  Trang {page} / {Math.ceil((users.total || 0) / 10)}
+                  Trang {page} / {users.meta?.totalPages || 1}
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil((users.total || 0) / 10)}
+                  disabled={!users.meta?.hasNextPage}
                 >
                   Trang sau
                 </Button>

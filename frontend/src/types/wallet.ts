@@ -1,8 +1,8 @@
 import { User } from "./auth";
 
 export interface Wallet {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   balance: string;
   isVerified: boolean;
   createdAt: string;
@@ -10,9 +10,9 @@ export interface Wallet {
 }
 
 export interface LedgerEntry {
-  id: number;
-  walletId: number;
-  transactionId: number;
+  id: string;
+  walletId: string;
+  transactionId: string;
   entryType: "DEBIT" | "CREDIT";
   amount: string;
   balanceBefore: string;
@@ -32,39 +32,44 @@ export interface WalletBalance {
 
 export enum WithdrawalStatus {
   PENDING = "PENDING",
-  PROCESSING = "PROCESSING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  CANCELLED = "CANCELLED",
+  APPROVED = "APPROVED",
+  PAID = "PAID",
+  REJECTED = "REJECTED",
+}
+
+export type WithdrawalMethod = 'BANKING' | 'CRYPTO';
+
+export interface WithdrawalAccountInfo {
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  cryptoAddress?: string;
+  cryptoNetwork?: string;
 }
 
 export interface Withdrawal {
-  id: number;
-  userId: number;
-  walletId: number;
+  id: string;
+  user_id: string;
   amount: string;
-  bankName: string;
-  bankAccountNumber: string;
-  bankAccountName: string;
+  method: WithdrawalMethod;
+  account_info: WithdrawalAccountInfo | null;
   status: WithdrawalStatus;
-  note: string | null;
-  processedBy: number | null;
-  processedAt: string | null;
-  failureReason: string | null;
-  createdAt: string;
-  updatedAt: string;
+  admin_note: string | null;
+  proof_file_url: string | null;
+  processed_by: string | null;
+  processed_at: string | null;
+  created_at: string;
   user?: User;
 }
 
 export interface CreateWithdrawalRequest {
   amount: number;
-  bankName: string;
-  bankAccountNumber: string;
-  bankAccountName: string;
-  note?: string;
+  method: WithdrawalMethod;
+  accountInfo?: WithdrawalAccountInfo;
 }
 
 export interface ProcessWithdrawalRequest {
-  action: "APPROVE" | "REJECT";
-  note?: string;
+  status: WithdrawalStatus;
+  adminNote?: string;
+  proofFileUrl?: string;
 }

@@ -1,20 +1,24 @@
 export type QuestionType =
-  | "TEXT"
-  | "NUMBER"
-  | "DATE"
-  | "SELECT"
-  | "MULTISELECT"
-  | "TEXTAREA";
+  | "text"
+  | "number"
+  | "date"
+  | "select"
+  | "multiselect"
+  | "textarea";
 
 export interface Question {
-  id: number;
-  questionText: string;
-  questionType: QuestionType;
-  options: string[] | null;
-  isRequired: boolean;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
+  id: string;
+  content: string;
+  type: QuestionType;
+  config?: {
+    options?: string[];
+    min?: number;
+    max?: number;
+    placeholder?: string;
+  };
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface CreateQuestionRequest {
