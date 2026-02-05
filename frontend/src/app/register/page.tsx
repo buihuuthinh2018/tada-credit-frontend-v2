@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRegister } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,9 @@ import {
 } from "@/components/ui/select";
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref");
+  
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
@@ -31,10 +35,20 @@ export default function RegisterPage() {
     fullname: "",
     gender: "MALE" as "MALE" | "FEMALE" | "OTHER",
     birthDate: "",
-    referralCode: "",
+    referralCode: refCode || "",
   });
 
   const registerMutation = useRegister();
+
+  // Auto-fill referral code from URL when it changes
+  useEffect(() => {
+    if (refCode) {
+      setFormData((prev) => ({
+        ...prev,
+        referralCode: refCode,
+      }));
+    }
+  }, [refCode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({

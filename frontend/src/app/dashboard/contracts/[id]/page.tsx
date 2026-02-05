@@ -388,7 +388,7 @@ export default function ContractDetailPage({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">
-              Hồ sơ #{contract.id.slice(0, 8)}
+              Hồ sơ {contract.contract_number || `#${contract.id.slice(0, 8)}`}
             </h1>
             <p className="text-gray-600">{contract.service?.name}</p>
           </div>

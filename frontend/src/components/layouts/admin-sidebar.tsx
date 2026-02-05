@@ -17,6 +17,7 @@ import {
   ClipboardList,
   TrendingUp,
   MessageSquare,
+  BarChart3,
 } from "lucide-react";
 import { useLogout, useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const adminNavItems = [
   { href: "/admin/contracts", label: "Quản lý Hồ sơ", icon: FileText },
   { href: "/admin/withdrawals", label: "Rút tiền", icon: CreditCard },
   { href: "/admin/commission", label: "Hoa hồng & KPI", icon: TrendingUp },
+  { href: "/admin/revenue", label: "Thống kê doanh thu", icon: BarChart3 },
   { href: "/admin/services", label: "Dịch vụ", icon: FileBox },
   { href: "/admin/documents", label: "Tài liệu", icon: FileCheck },
   { href: "/admin/questions", label: "Câu hỏi", icon: MessageSquare },

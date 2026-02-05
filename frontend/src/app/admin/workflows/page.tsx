@@ -68,7 +68,7 @@ const DEFAULT_STAGES: CreateWorkflowStageRequest[] = [
   { code: "SUBMITTED", name: "Đã gửi", stageOrder: 1, color: "#F59E0B", isRequired: true },
   { code: "REVIEWING", name: "Đang xem xét", stageOrder: 2, color: "#3B82F6" },
   { code: "APPROVED", name: "Đã duyệt", stageOrder: 3, color: "#10B981" },
-  { code: "REJECTED", name: "Từ chối", stageOrder: 4, color: "#EF4444" },
+  { code: "REJECTED", name: "Từ chối", stageOrder: 4, color: "#EF4444", isRequired: true },
   { code: "COMPLETED", name: "Hoàn thành", stageOrder: 5, color: "#8B5CF6", isRequired: true, triggersCommission: true },
 ];
 
@@ -124,7 +124,8 @@ export default function AdminWorkflowsPage() {
     const requiredStages: CreateWorkflowStageRequest[] = [
       { code: "DRAFT", name: "Nháp", stageOrder: 0, color: "#6B7280", isRequired: true },
       { code: "SUBMITTED", name: "Đã gửi", stageOrder: 1, color: "#F59E0B", isRequired: true },
-      { code: "COMPLETED", name: "Hoàn thành", stageOrder: 2, color: "#8B5CF6", isRequired: true, triggersCommission: true },
+      { code: "REJECTED", name: "Từ chối", stageOrder: 2, color: "#EF4444", isRequired: true },
+      { code: "COMPLETED", name: "Hoàn thành", stageOrder: 3, color: "#8B5CF6", isRequired: true, triggersCommission: true },
     ];
     
     setFormData({
@@ -139,10 +140,33 @@ export default function AdminWorkflowsPage() {
   };
 
   const loadDefaultTemplate = () => {
+    const stages = [...DEFAULT_STAGES];
+    const transitions = [...DEFAULT_TRANSITIONS];
+    
+    // Auto-generate transitions to REJECTED from all stages except REJECTED, DRAFT, and COMPLETED
+    const autoRejectTransitions: CreateWorkflowTransitionRequest[] = stages
+      .filter(s => !["REJECTED", "DRAFT", "COMPLETED"].includes(s.code))
+      .map(s => ({
+        fromStageCode: s.code,
+        toStageCode: "REJECTED",
+        requiredPermission: "contract:reject"
+      }));
+    
+    // Merge with existing transitions, avoid duplicates
+    const allTransitions = [...transitions];
+    autoRejectTransitions.forEach(art => {
+      const exists = allTransitions.some(
+        t => t.fromStageCode === art.fromStageCode && t.toStageCode === art.toStageCode
+      );
+      if (!exists) {
+        allTransitions.push(art);
+      }
+    });
+    
     setFormData((prev) => ({
       ...prev,
-      stages: [...DEFAULT_STAGES],
-      transitions: [...DEFAULT_TRANSITIONS],
+      stages,
+      transitions: allTransitions,
     }));
   };
 
@@ -210,9 +234,24 @@ export default function AdminWorkflowsPage() {
       // Re-order all stages
       newStages = newStages.map((s, i) => ({ ...s, stageOrder: i }));
       
+      // Auto-create transition from new stage to REJECTED if REJECTED exists and new stage is not REJECTED itself
+      let updatedTransitions = prev.transitions;
+      if (newStage.code !== "REJECTED" && newStages.some(s => s.code === "REJECTED")) {
+        const transitionExists = updatedTransitions.some(
+          t => t.fromStageCode === newStage.code && t.toStageCode === "REJECTED"
+        );
+        if (!transitionExists) {
+          updatedTransitions = [
+            ...updatedTransitions,
+            { fromStageCode: newStage.code, toStageCode: "REJECTED", requiredPermission: "contract:reject" }
+          ];
+        }
+      }
+      
       return {
         ...prev,
         stages: newStages,
+        transitions: updatedTransitions,
       };
     });
     
@@ -221,7 +260,7 @@ export default function AdminWorkflowsPage() {
 
   const removeStage = (code: string) => {
     // Prevent deletion of required stages
-    const requiredCodes = ["DRAFT", "SUBMITTED", "COMPLETED"];
+    const requiredCodes = ["DRAFT", "SUBMITTED", "REJECTED", "COMPLETED"];
     if (requiredCodes.includes(code)) {
       return; // Do nothing for required stages
     }
@@ -364,9 +403,10 @@ export default function AdminWorkflowsPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                   <p className="text-sm text-blue-800">
                     ℹ️ <strong>Lưu ý:</strong> Các giai đoạn <Badge variant="secondary" className="mx-1">DRAFT</Badge>, 
-                    <Badge variant="secondary" className="mx-1">SUBMITTED</Badge>, và 
+                    <Badge variant="secondary" className="mx-1">SUBMITTED</Badge>, 
+                    <Badge variant="secondary" className="mx-1">REJECTED</Badge>, và 
                     <Badge variant="secondary" className="mx-1">COMPLETED</Badge> là bắt buộc và không thể xóa. 
-                    Giai đoạn COMPLETED sẽ luôn ở cuối workflow.
+                    Tất cả các giai đoạn đều có thể chuyển về REJECTED.
                   </p>
                 </div>
                 <div className="border rounded-lg p-4 space-y-4">
@@ -549,6 +589,40 @@ export default function AdminWorkflowsPage() {
 
               {/* Transitions Tab */}
               <TabsContent value="transitions" className="space-y-4 mt-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Gợi ý:</strong> Tất cả các giai đoạn đều nên có thể chuyển về REJECTED để từ chối hồ sơ.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const newTransitions: CreateWorkflowTransitionRequest[] = [];
+                      formData.stages
+                        .filter(s => !["REJECTED", "DRAFT", "COMPLETED"].includes(s.code))
+                        .forEach(stage => {
+                          const exists = formData.transitions.some(
+                            t => t.fromStageCode === stage.code && t.toStageCode === "REJECTED"
+                          );
+                          if (!exists) {
+                            newTransitions.push({
+                              fromStageCode: stage.code,
+                              toStageCode: "REJECTED",
+                              requiredPermission: "contract:reject"
+                            });
+                          }
+                        });
+                      if (newTransitions.length > 0) {
+                        setFormData(prev => ({
+                          ...prev,
+                          transitions: [...prev.transitions, ...newTransitions]
+                        }));
+                      }
+                    }}
+                  >
+                    Tự động tạo transitions về REJECTED
+                  </Button>
+                </div>
                 <div className="border rounded-lg p-4 space-y-4">
                   <h4 className="font-medium">Thêm chuyển đổi mới</h4>
                   <div className="grid grid-cols-4 gap-3">

@@ -3,12 +3,16 @@
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Sidebar } from "@/components/layouts/sidebar";
 import { Header } from "@/components/layouts/header";
+import { useCurrentUserQuery } from "@/hooks/use-users";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Fetch current user on layout mount to ensure fresh data
+  useCurrentUserQuery();
+  
   return (
     <ProtectedRoute>
       <div className="flex h-screen">

@@ -87,7 +87,7 @@ interface KpiTier {
   role_code: string;
   min_contracts: number | null;
   min_disbursement: number | null;
-  bonus_rate: number;
+  bonus_amount: number;
   tier_order: number;
   is_active: boolean;
 }
@@ -148,7 +148,7 @@ export default function AdminCommissionPage() {
     roleCode: "CTV",
     minContracts: 0,
     minDisbursement: 0,
-    bonusRate: 0.01,
+    bonusAmount: 1000000,
     tierOrder: 1,
   });
 
@@ -216,7 +216,7 @@ export default function AdminCommissionPage() {
         roleCode: "CTV",
         minContracts: 0,
         minDisbursement: 0,
-        bonusRate: 0.01,
+        bonusAmount: 1000000,
         tierOrder: 1,
       });
       toast.success("Tạo KPI tier thành công");
@@ -546,20 +546,22 @@ export default function AdminCommissionPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Tỷ lệ thưởng (%)</Label>
+                        <Label>Số tiền thưởng (VND)</Label>
                         <Input
                           type="number"
-                          step="0.01"
+                          step="100000"
                           min="0"
-                          max="100"
-                          value={kpiForm.bonusRate * 100}
+                          value={kpiForm.bonusAmount}
                           onChange={(e) =>
                             setKpiForm({
                               ...kpiForm,
-                              bonusRate: parseFloat(e.target.value) / 100,
+                              bonusAmount: parseInt(e.target.value) || 0,
                             })
                           }
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          VD: 1,000,000 = 1 triệu VND
+                        </p>
                       </div>
                       <div>
                         <Label>Thứ tự tier</Label>
@@ -632,7 +634,7 @@ export default function AdminCommissionPage() {
                             : "-"}
                         </TableCell>
                         <TableCell className="text-green-600 font-medium">
-                          +{formatPercent(tier.bonus_rate)}
+                          +{formatCurrency(tier.bonus_amount || 0)}
                         </TableCell>
                         <TableCell>{tier.tier_order}</TableCell>
                         <TableCell>
@@ -653,7 +655,7 @@ export default function AdminCommissionPage() {
                                 roleCode: tier.role_code,
                                 minContracts: tier.min_contracts || 0,
                                 minDisbursement: tier.min_disbursement || 0,
-                                bonusRate: tier.bonus_rate,
+                                bonusAmount: tier.bonus_amount || 0,
                                 tierOrder: tier.tier_order,
                               });
                             }}
@@ -1009,18 +1011,22 @@ export default function AdminCommissionPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Tỷ lệ thưởng (%)</Label>
+                  <Label>Số tiền thưởng (VND)</Label>
                   <Input
                     type="number"
-                    step="0.01"
-                    value={kpiForm.bonusRate * 100}
+                    step="100000"
+                    min="0"
+                    value={kpiForm.bonusAmount}
                     onChange={(e) =>
                       setKpiForm({
                         ...kpiForm,
-                        bonusRate: parseFloat(e.target.value) / 100,
+                        bonusAmount: parseInt(e.target.value) || 0,
                       })
                     }
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    VD: 1,000,000 = 1 triệu VND
+                  </p>
                 </div>
                 <div>
                   <Label>Thứ tự tier</Label>

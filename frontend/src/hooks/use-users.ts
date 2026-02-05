@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/api-client";
+import { useAuthStore } from "@/store/auth-store";
 import type {
   User,
   Role,
@@ -9,6 +10,38 @@ import type {
   UpdateUserRequest,
 } from "@/types";
 import { toast } from "sonner";
+
+// Get current user from API (more reliable than auth store)
+export function useCurrentUserQuery() {
+  const { isAuthenticated, setUser } = useAuthStore();
+  
+  return useQuery<User>({
+    queryKey: ["users", "me"],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/users/me");
+      // Update auth store with fresh data
+      setUser(data);
+      return data;
+    },
+    enabled: isAuthenticated,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
+  });
+}
+
+// Search users (for CTV to find customers)
+export function useSearchUsers(search: string) {
+  return useQuery<PaginatedResponse<User>>({
+    queryKey: ["users", "search", search],
+    queryFn: async () => {
+      const { data } = await apiClient.get("/users/search", { 
+        params: { q: search } 
+      });
+      return data;
+    },
+    enabled: search.length >= 3, // Only search when at least 3 characters
+  });
+}
 
 // Get all users (admin)
 export function useAdminUsers(params?: UserFilters) {

@@ -14,6 +14,8 @@ export interface Contract {
   service_id: string;
   current_stage_id: string;
   referrer_id?: string | null;
+  requested_amount?: number; // User's requested loan amount
+  disbursed_amount?: number | null; // Actual disbursed amount (set by admin)
   submitted_at?: string | null;
   approved_at?: string | null;
   rejected_at?: string | null;
@@ -35,6 +37,7 @@ export interface Contract {
 
 export interface CreateContractRequest {
   serviceId: string;
+  requestedAmount: number;
 }
 
 export interface ContractAnswer {
@@ -57,6 +60,12 @@ export interface UpdateContractAnswersRequest {
 export interface ContractTransitionRequest {
   toStageId: string;
   note?: string;
+  disbursementAmount?: number; // Required when transitioning to commission-triggering stage
+  revenuePercentage?: number;  // Required when transitioning to commission-triggering stage (e.g., 10.5 for 10.5%)
+}
+
+export interface UpdateDisbursementRequest {
+  disbursedAmount: number;
 }
 
 export interface ContractHistory {

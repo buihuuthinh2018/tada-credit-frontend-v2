@@ -15,6 +15,7 @@ export interface Question {
     min?: number;
     max?: number;
     placeholder?: string;
+    isCurrency?: boolean;  // Flag to indicate if this is a currency field (for number type)
   };
   is_active: boolean;
   created_at: string;

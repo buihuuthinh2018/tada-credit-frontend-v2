@@ -10,13 +10,20 @@ import type {
 } from "@/types";
 import { toast } from "sonner";
 
+// Create contract request type
+interface CreateContractRequest {
+  serviceId: string;
+  requestedAmount: number;  // Required: user's requested loan amount
+  targetUserId?: string;  // For CTV creating on behalf of another user
+}
+
 // Create contract
 export function useCreateContract() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (serviceId: string) => {
-      const { data } = await apiClient.post("/contracts", { serviceId });
+    mutationFn: async (request: CreateContractRequest) => {
+      const { data } = await apiClient.post("/contracts", request);
       return data;
     },
     onSuccess: () => {
@@ -33,7 +40,9 @@ export function useCreateContract() {
 export function useContracts(params?: {
   page?: number;
   limit?: number;
-  stageCode?: string; // Dynamic stage code
+  type?: 'owned' | 'created';  // owned = user's own, created = CTV created for others
+  serviceId?: string;
+  stageCode?: string;
 }) {
   return useQuery<PaginatedResponse<Contract>>({
     queryKey: ["contracts", params],
@@ -198,14 +207,18 @@ export function useAdminTransitionContract() {
       id,
       toStageId,
       note,
+      disbursementAmount,
+      revenuePercentage,
     }: {
       id: string;
       toStageId: string;
       note?: string;
+      disbursementAmount?: number;
+      revenuePercentage?: number;
     }) => {
       const response = await apiClient.patch(
         `/admin/contracts/${id}/transition`,
-        { toStageId, note }
+        { toStageId, note, disbursementAmount, revenuePercentage }
       );
       return response.data;
     },
@@ -217,6 +230,37 @@ export function useAdminTransitionContract() {
     onError: (error: { response?: { data?: { message?: string } } }) => {
       toast.error(
         error.response?.data?.message || "Chuyển trạng thái thất bại"
+      );
+    },
+  });
+}
+
+// Admin: Update disbursed amount for a contract
+export function useUpdateDisbursement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      disbursedAmount,
+    }: {
+      id: string;
+      disbursedAmount: number;
+    }) => {
+      const response = await apiClient.patch(
+        `/admin/contracts/${id}/disbursement`,
+        { disbursedAmount }
+      );
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "contracts", id] });
+      toast.success("Cập nhật số tiền giải ngân thành công!");
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(
+        error.response?.data?.message || "Cập nhật giải ngân thất bại"
       );
     },
   });

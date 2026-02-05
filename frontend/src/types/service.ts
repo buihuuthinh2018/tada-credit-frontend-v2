@@ -8,6 +8,9 @@ export interface Service {
   description: string;
   workflow_id?: string;
   is_active: boolean;
+  commission_enabled: boolean;
+  min_loan_amount?: number;
+  max_loan_amount?: number;
   created_at: string;
   updated_at?: string;
   // Nested workflow
@@ -42,6 +45,8 @@ export interface CreateServiceRequest {
   name: string;
   description: string;
   workflowId: string;
+  minLoanAmount?: number;
+  maxLoanAmount?: number;
 
   // Optional relations
   documentRequirementIds?: string[];
@@ -53,4 +58,7 @@ export interface UpdateServiceRequest {
   name?: string;
   description?: string;
   is_active?: boolean;
+  commission_enabled?: boolean;
+  min_loan_amount?: number;
+  max_loan_amount?: number;
 }

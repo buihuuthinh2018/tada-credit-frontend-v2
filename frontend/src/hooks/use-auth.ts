@@ -7,6 +7,7 @@ import type { LoginRequest, RegisterRequest, AuthResponse } from "@/types";
 
 export function useLogin() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { login } = useAuthStore();
 
   return useMutation({
@@ -14,8 +15,21 @@ export function useLogin() {
       const response = await apiClient.post<AuthResponse>("/auth/login", data);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       login(data);
+      
+      // Fetch fresh user data from /users/me to get complete info (including referral_code)
+      try {
+        const userResponse = await apiClient.get("/users/me");
+        const { setUser } = useAuthStore.getState();
+        setUser(userResponse.data);
+        
+        // Invalidate user queries to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+      
       toast.success("Đăng nhập thành công!");
       
       // Redirect based on role
@@ -37,6 +51,7 @@ export function useLogin() {
 
 export function useRegister() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { login } = useAuthStore();
 
   return useMutation({
@@ -47,8 +62,21 @@ export function useRegister() {
       );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       login(data);
+      
+      // Fetch fresh user data from /users/me
+      try {
+        const userResponse = await apiClient.get("/users/me");
+        const { setUser } = useAuthStore.getState();
+        setUser(userResponse.data);
+        
+        // Invalidate user queries to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ["users", "me"] });
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+      
       toast.success("Đăng ký thành công!");
       router.push("/dashboard");
     },

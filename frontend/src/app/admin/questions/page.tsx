@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -57,6 +58,7 @@ type FormState = {
   placeholder: string;
   min?: number;
   max?: number;
+  isCurrency?: boolean;  // Flag for currency formatting
 };
 
 const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
@@ -77,6 +79,7 @@ function defaultFormState(): FormState {
     placeholder: "",
     min: undefined,
     max: undefined,
+    isCurrency: false,
   };
 }
 
@@ -127,6 +130,7 @@ export default function AdminQuestionsPage() {
       placeholder: question.config?.placeholder ?? "",
       min: question.config?.min,
       max: question.config?.max,
+      isCurrency: question.config?.isCurrency ?? false,
     });
   };
 
@@ -157,6 +161,7 @@ export default function AdminQuestionsPage() {
     if (requiresMinMax(form.type)) {
       if (form.min !== undefined) config.min = form.min;
       if (form.max !== undefined) config.max = form.max;
+      if (form.isCurrency) config.isCurrency = true;
     }
 
     createMutation.mutate(
@@ -194,6 +199,7 @@ export default function AdminQuestionsPage() {
     if (requiresMinMax(form.type)) {
       if (form.min !== undefined) config.min = form.min;
       if (form.max !== undefined) config.max = form.max;
+      if (form.isCurrency) config.isCurrency = true;
     }
 
     updateMutation.mutate(
@@ -307,34 +313,48 @@ export default function AdminQuestionsPage() {
                 )}
 
                 {requiresMinMax(form.type) && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Giá trị min (tùy chọn)</Label>
-                      <Input
-                        type="number"
-                        value={form.min ?? ""}
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            min: e.target.value ? Number(e.target.value) : undefined,
-                          }))
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Giá trị min (tùy chọn)</Label>
+                        <Input
+                          type="number"
+                          value={form.min ?? ""}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              min: e.target.value ? Number(e.target.value) : undefined,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Giá trị max (tùy chọn)</Label>
+                        <Input
+                          type="number"
+                          value={form.max ?? ""}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              max: e.target.value ? Number(e.target.value) : undefined,
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <Checkbox
+                        id="isCurrency"
+                        checked={form.isCurrency}
+                        onCheckedChange={(checked: boolean | 'indeterminate') =>
+                          setForm((prev) => ({ ...prev, isCurrency: checked === true }))
                         }
                       />
+                      <Label htmlFor="isCurrency" className="cursor-pointer">
+                        Định dạng tiền tệ VND (1.000.000)
+                      </Label>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Giá trị max (tùy chọn)</Label>
-                      <Input
-                        type="number"
-                        value={form.max ?? ""}
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            max: e.target.value ? Number(e.target.value) : undefined,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
+                  </>
                 )}
               </div>
 
@@ -392,6 +412,9 @@ export default function AdminQuestionsPage() {
                           )}
                           {q.config?.min !== undefined && <span>Min: {q.config.min}</span>}
                           {q.config?.max !== undefined && <span>Max: {q.config.max}</span>}
+                          {q.config?.isCurrency && (
+                            <Badge variant="secondary" className="ml-1">💰 Currency</Badge>
+                          )}
                           {!q.config && <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-center">
@@ -487,34 +510,48 @@ export default function AdminQuestionsPage() {
             )}
 
             {requiresMinMax(form.type) && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Giá trị min (tùy chọn)</Label>
-                  <Input
-                    type="number"
-                    value={form.min ?? ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        min: e.target.value ? Number(e.target.value) : undefined,
-                      }))
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Giá trị min (tùy chọn)</Label>
+                    <Input
+                      type="number"
+                      value={form.min ?? ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          min: e.target.value ? Number(e.target.value) : undefined,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Giá trị max (tùy chọn)</Label>
+                    <Input
+                      type="number"
+                      value={form.max ?? ""}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          max: e.target.value ? Number(e.target.value) : undefined,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Checkbox
+                    id="isCurrency-edit"
+                    checked={form.isCurrency}
+                    onCheckedChange={(checked: boolean | 'indeterminate') =>
+                      setForm((prev) => ({ ...prev, isCurrency: checked === true }))
                     }
                   />
+                  <Label htmlFor="isCurrency-edit" className="cursor-pointer">
+                    Định dạng tiền tệ VND (1.000.000)
+                  </Label>
                 </div>
-                <div className="space-y-2">
-                  <Label>Giá trị max (tùy chọn)</Label>
-                  <Input
-                    type="number"
-                    value={form.max ?? ""}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        max: e.target.value ? Number(e.target.value) : undefined,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
+              </>
             )}
           </div>
 

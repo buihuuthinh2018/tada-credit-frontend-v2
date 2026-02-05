@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useCurrentUserQuery } from "@/hooks/use-users";
 import {
   Card,
   CardContent,
@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { User, Shield, Lock, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DashboardSettingsPage() {
-  const { user } = useAuth();
+  const { data: user, isLoading } = useCurrentUserQuery();
   const [copied, setCopied] = useState(false);
 
   const copyReferralCode = () => {
@@ -32,6 +33,16 @@ export default function DashboardSettingsPage() {
   // Helper to check user status
   const isVerified = user?.status === "ACTIVE" || user?.status === "PENDING_VERIFY";
   const isActive = user?.status === "ACTIVE";
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

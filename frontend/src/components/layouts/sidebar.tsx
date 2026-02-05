@@ -20,7 +20,7 @@ const userNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/wallet", label: "Ví của tôi", icon: Wallet },
   { href: "/dashboard/contracts", label: "Hồ sơ", icon: FileText },
-  { href: "/dashboard/referrals", label: "Giới thiệu", icon: Users },
+  { href: "/dashboard/referral", label: "Giới thiệu", icon: Users },
   { href: "/dashboard/commission", label: "Hoa hồng", icon: DollarSign },
   { href: "/dashboard/settings", label: "Cài đặt", icon: Settings },
 ];

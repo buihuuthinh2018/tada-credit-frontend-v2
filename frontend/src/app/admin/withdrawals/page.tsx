@@ -5,6 +5,7 @@ import {
   useAdminWithdrawals,
   useProcessWithdrawal,
 } from "@/hooks/use-withdrawals";
+import { formatVND } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -166,7 +167,7 @@ export default function AdminWithdrawalsPage() {
                         </span>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {parseFloat(withdrawal.amount).toLocaleString("vi-VN")} VNĐ
+                        {formatVND(parseFloat(withdrawal.amount))}
                       </TableCell>
                       <TableCell>
                         {withdrawal.method === 'BANKING' ? withdrawal.account_info?.bankName : 'Crypto'}

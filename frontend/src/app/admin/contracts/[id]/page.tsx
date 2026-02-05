@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, use } from "react";
-import { useAdminContractDetail, useAdminTransitionContract, useAdminContractTransitions } from "@/hooks/use-contracts";
-import { useReviewDocument } from "@/hooks/use-documents";
+import { useAdminContractDetail, useAdminTransitionContract, useAdminContractTransitions, useUpdateDisbursement } from "@/hooks/use-contracts";
+import { formatVND } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Tabs,
   TabsContent,
@@ -64,12 +65,13 @@ export default function AdminContractDetailPage({
   const { data: contract, isLoading, refetch } = useAdminContractDetail(contractId);
   const { data: availableTransitions } = useAdminContractTransitions(contractId);
   const transitionContract = useAdminTransitionContract();
-  const reviewDocument = useReviewDocument();
+  const updateDisbursement = useUpdateDisbursement();
 
-  const [reviewingDoc, setReviewingDoc] = useState<ContractDocument | null>(null);
-  const [reviewNote, setReviewNote] = useState("");
   const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
   const [transitionNote, setTransitionNote] = useState("");
+  const [selectedTransition, setSelectedTransition] = useState<string | null>(null);
+  const [disbursementAmount, setDisbursementAmount] = useState<string>("");
+  const [revenuePercentage, setRevenuePercentage] = useState<string>("");
 
   if (isLoading) {
     return (
@@ -106,36 +108,39 @@ export default function AdminContractDetailPage({
     return <Badge variant={variants[status]}>{labels[status] || status}</Badge>;
   };
 
-  const handleReviewDocument = (status: "APPROVED" | "REJECTED") => {
-    if (!reviewingDoc) return;
-
-    reviewDocument.mutate(
-      {
-        contractId: Number(contractId),
-        documentId: Number(reviewingDoc.id),
-        data: { status, note: reviewNote },
+  const handleTransition = (toStageId: string, triggersCommission: boolean = false) => {
+    const disbursement = disbursementAmount ? parseInt(disbursementAmount.replace(/[^\d]/g, '')) : undefined;
+    const percentage = revenuePercentage ? parseFloat(revenuePercentage) : undefined;
+    
+    transitionContract.mutate(
+      { 
+        id: contractId, 
+        toStageId, 
+        note: transitionNote || undefined,
+        disbursementAmount: triggersCommission ? disbursement : undefined,
+        revenuePercentage: triggersCommission ? percentage : undefined,
       },
       {
         onSuccess: () => {
-          setReviewingDoc(null);
-          setReviewNote("");
+          setTransitionDialogOpen(false);
+          setTransitionNote("");
+          setSelectedTransition(null);
+          setDisbursementAmount("");
+          setRevenuePercentage("");
           refetch();
         },
       }
     );
   };
-
-  const handleTransition = (toStageId: string) => {
-    transitionContract.mutate(
-      { id: contractId, toStageId, note: transitionNote || undefined },
-      {
-        onSuccess: () => {
-          setTransitionDialogOpen(false);
-          setTransitionNote("");
-          refetch();
-        },
-      }
-    );
+  
+  // Initialize disbursement amount from contract's requested/disbursed amount
+  const initDisbursementForTransition = (toStageId: string) => {
+    const transition = availableTransitions?.find(t => t.to_stage?.id === toStageId);
+    if (transition?.to_stage?.triggers_commission) {
+      const defaultAmount = contract?.disbursed_amount || contract?.requested_amount || 0;
+      setDisbursementAmount(formatVND(Number(defaultAmount), false));
+    }
+    setSelectedTransition(toStageId);
   };
 
   return (
@@ -150,7 +155,7 @@ export default function AdminContractDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Hồ sơ #{contract.id}</h1>
+            <h1 className="text-2xl font-bold">Hồ sơ {contract.contract_number || `#${contract.id.slice(0, 8)}`}</h1>
             <p className="text-gray-500">{contract.service?.name}</p>
           </div>
         </div>
@@ -169,6 +174,20 @@ export default function AdminContractDetailPage({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  {/* Show current loan info */}
+                  <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Nhu cầu vay:</span>
+                      <span className="font-medium">{formatVND(Number(contract.requested_amount || 0))}</span>
+                    </div>
+                    {contract.disbursed_amount && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Giải ngân (dự kiến):</span>
+                        <span className="font-medium">{formatVND(Number(contract.disbursed_amount))}</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Ghi chú (tùy chọn)</Label>
                     <Textarea
@@ -177,20 +196,99 @@ export default function AdminContractDetailPage({
                       placeholder="Nhập ghi chú nếu cần..."
                     />
                   </div>
+                  
+                  {/* Transition selection with disbursement input for commission stages */}
                   <div className="space-y-2">
                     {availableTransitions && availableTransitions.length > 0 ? (
-                      availableTransitions.map((transition) => (
-                        <Button
-                          key={transition.id}
-                          variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => handleTransition(transition.to_stage?.id || "")}
-                          disabled={transitionContract.isPending}
-                        >
-                          <Clock className="w-4 h-4 mr-2 text-blue-500" />
-                          {transition.name} → {transition.to_stage?.name}
-                        </Button>
-                      ))
+                      availableTransitions.map((transition) => {
+                        const toStage = transition.to_stage;
+                        const triggersCommission = toStage?.triggers_commission || false;
+                        const isSelected = selectedTransition === toStage?.id;
+                        
+                        return (
+                          <div key={transition.id} className="space-y-2">
+                            <Button
+                              variant={isSelected ? "default" : "outline"}
+                              className="w-full justify-start"
+                              onClick={() => initDisbursementForTransition(toStage?.id || "")}
+                            >
+                              <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                              {transition.name} → {toStage?.name}
+                              {triggersCommission && (
+                                <Badge variant="secondary" className="ml-auto">
+                                  Tính hoa hồng
+                                </Badge>
+                              )}
+                            </Button>
+                            
+                            {/* Show disbursement input when this transition is selected and triggers commission */}
+                            {isSelected && triggersCommission && (
+                              <div className="ml-6 p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+                                <div className="space-y-2">
+                                  <Label className="text-amber-800">
+                                    Số tiền giải ngân thực tế (VND) *
+                                  </Label>
+                                  <Input
+                                    value={disbursementAmount}
+                                    onChange={(e) => {
+                                      const numValue = parseInt(e.target.value.replace(/[^\d]/g, '')) || 0;
+                                      setDisbursementAmount(formatVND(numValue, false));
+                                    }}
+                                    placeholder="Nhập số tiền giải ngân..."
+                                    className="bg-white"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-amber-800">
+                                    Tỷ lệ doanh thu (%) *
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    min="0.01"
+                                    max="100"
+                                    step="0.01"
+                                    value={revenuePercentage}
+                                    onChange={(e) => setRevenuePercentage(e.target.value)}
+                                    placeholder="Nhập tỷ lệ doanh thu (ví dụ: 10.5)..."
+                                    className="bg-white"
+                                  />
+                                </div>
+                                {disbursementAmount && revenuePercentage && (
+                                  <div className="p-2 bg-green-50 border border-green-200 rounded text-sm">
+                                    <div className="text-green-800">
+                                      <span className="font-medium">Doanh thu:</span>{" "}
+                                      {formatVND(Math.round(parseInt(disbursementAmount.replace(/[^\d]/g, '')) * parseFloat(revenuePercentage) / 100))}
+                                    </div>
+                                  </div>
+                                )}
+                                <p className="text-xs text-amber-700">
+                                  Hoa hồng sẽ được tính dựa trên doanh thu (số tiền giải ngân × tỷ lệ %).
+                                </p>
+                                <Button
+                                  className="w-full mt-2"
+                                  onClick={() => handleTransition(toStage?.id || "", true)}
+                                  disabled={transitionContract.isPending || !disbursementAmount || !revenuePercentage}
+                                >
+                                  {transitionContract.isPending ? "Đang xử lý..." : "Xác nhận chuyển trạng thái"}
+                                </Button>
+                              </div>
+                            )}
+                            
+                            {/* For non-commission transitions, confirm immediately */}
+                            {isSelected && !triggersCommission && (
+                              <div className="ml-6">
+                                <Button
+                                  className="w-full"
+                                  onClick={() => handleTransition(toStage?.id || "", false)}
+                                  disabled={transitionContract.isPending}
+                                >
+                                  {transitionContract.isPending ? "Đang xử lý..." : "Xác nhận"}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
                     ) : (
                       <p className="text-gray-500 text-center py-4">
                         Không có transition nào khả dụng
@@ -230,7 +328,7 @@ export default function AdminContractDetailPage({
             <CardHeader>
               <CardTitle>Tài liệu đã nộp</CardTitle>
               <CardDescription>
-                Xem và duyệt các tài liệu của hồ sơ
+                Xem các tài liệu của hồ sơ (review thủ công)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -247,56 +345,6 @@ export default function AdminContractDetailPage({
                             <p className="text-sm text-gray-500">
                               {doc.document_requirement.description}
                             </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {getDocStatusBadge(doc.status)}
-                          {doc.status === "PENDING" && (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  onClick={() => setReviewingDoc(doc)}
-                                >
-                                  Duyệt
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Duyệt tài liệu</DialogTitle>
-                                  <DialogDescription>
-                                    {doc.document_requirement?.name}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                  <div className="space-y-2">
-                                    <Label>Ghi chú (tùy chọn)</Label>
-                                    <Textarea
-                                      value={reviewNote}
-                                      onChange={(e) => setReviewNote(e.target.value)}
-                                      placeholder="Nhập ghi chú nếu cần..."
-                                    />
-                                  </div>
-                                </div>
-                                <DialogFooter className="gap-2">
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => handleReviewDocument("REJECTED")}
-                                    disabled={reviewDocument.isPending}
-                                  >
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Từ chối
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleReviewDocument("APPROVED")}
-                                    disabled={reviewDocument.isPending}
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-2" />
-                                    Phê duyệt
-                                  </Button>
-                                </DialogFooter>
-                              </DialogContent>
-                            </Dialog>
                           )}
                         </div>
                       </div>
@@ -346,35 +394,70 @@ export default function AdminContractDetailPage({
 
         {/* Info Tab */}
         <TabsContent value="info">
-          <Card>
-            <CardHeader>
-              <CardTitle>Thông tin người dùng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Họ tên</dt>
-                  <dd className="mt-1 text-sm">
-                    {contract.user?.fullname}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Email</dt>
-                  <dd className="mt-1 text-sm">{contract.user?.email}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Số điện thoại</dt>
-                  <dd className="mt-1 text-sm">{contract.user?.phone || "N/A"}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Ngày tạo hồ sơ</dt>
-                  <dd className="mt-1 text-sm">
-                    {new Date(contract.created_at).toLocaleString("vi-VN")}
-                  </dd>
-                </div>
-              </dl>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Loan Amount Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin khoản vay</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <dt className="text-sm font-medium text-blue-600">Nhu cầu vay</dt>
+                    <dd className="mt-1 text-xl font-bold text-blue-800">
+                      {formatVND(Number(contract.requested_amount || 0))}
+                    </dd>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <dt className="text-sm font-medium text-green-600">Giải ngân thực tế</dt>
+                    <dd className="mt-1 text-xl font-bold text-green-800">
+                      {contract.disbursed_amount 
+                        ? formatVND(Number(contract.disbursed_amount))
+                        : "Chưa xác định"
+                      }
+                    </dd>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <dt className="text-sm font-medium text-gray-600">Giới hạn dịch vụ</dt>
+                    <dd className="mt-1 text-sm text-gray-800">
+                      {formatVND(Number(contract.service?.min_loan_amount || 1000000), false)} - {formatVND(Number(contract.service?.max_loan_amount || 100000000))} 
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            {/* User Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Thông tin người dùng</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-2 gap-4">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Họ tên</dt>
+                    <dd className="mt-1 text-sm">
+                      {contract.user?.fullname}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Email</dt>
+                    <dd className="mt-1 text-sm">{contract.user?.email}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Số điện thoại</dt>
+                    <dd className="mt-1 text-sm">{contract.user?.phone || "N/A"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Ngày tạo hồ sơ</dt>
+                    <dd className="mt-1 text-sm">
+                      {new Date(contract.created_at).toLocaleString("vi-VN")}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Answers Tab */}

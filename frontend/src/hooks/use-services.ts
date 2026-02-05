@@ -4,11 +4,13 @@ import type { Service, CreateServiceRequest, UpdateServiceRequest } from "@/type
 import { toast } from "sonner";
 
 // Get all services (public)
-export function useServices() {
+export function useServices(params?: { activeOnly?: boolean }) {
   return useQuery<Service[]>({
-    queryKey: ["services"],
+    queryKey: ["services", params],
     queryFn: async () => {
-      const { data } = await apiClient.get("/services");
+      const { data } = await apiClient.get("/services", { 
+        params: params?.activeOnly ? { active: true } : undefined 
+      });
       return data;
     },
   });

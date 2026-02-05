@@ -63,6 +63,7 @@ export default function EditServicePage() {
     name: "",
     description: "",
     is_active: true,
+    commission_enabled: true,
   });
 
   const [docSearch, setDocSearch] = useState("");
@@ -76,6 +77,7 @@ export default function EditServicePage() {
         name: service.name,
         description: service.description || "",
         is_active: service.is_active,
+        commission_enabled: service.commission_enabled ?? true,
       });
     }
   }, [service]);
@@ -141,6 +143,7 @@ export default function EditServicePage() {
           name: formData.name,
           description: formData.description,
           is_active: formData.is_active,
+          commission_enabled: formData.commission_enabled,
         },
       },
       {
@@ -228,6 +231,18 @@ export default function EditServicePage() {
             />
             <Label htmlFor="is_active" className="cursor-pointer">
               Dịch vụ đang hoạt động
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="commission_enabled"
+              checked={formData.commission_enabled}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({ ...prev, commission_enabled: !!checked }))
+              }
+            />
+            <Label htmlFor="commission_enabled" className="cursor-pointer">
+              Tính hoa hồng khi hoàn thành hợp đồng
             </Label>
           </div>
         </CardContent>

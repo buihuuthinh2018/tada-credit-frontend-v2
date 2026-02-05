@@ -5,6 +5,7 @@ import { useServices, useCreateService, useUpdateService } from "@/hooks/use-ser
 import { useWorkflows } from "@/hooks/use-workflows";
 import { useDocumentRequirements } from "@/hooks/use-documents";
 import { useQuestions } from "@/hooks/use-questions";
+import { formatVND } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -53,6 +54,8 @@ export default function AdminServicesPage() {
     name: "",
     description: "",
     workflowId: "",
+    minLoanAmount: 1000000,
+    maxLoanAmount: 100000000,
     documentRequirements: [] as Array<{ id: string; isRequired: boolean }>,
     questionIds: [] as string[],
   });
@@ -63,6 +66,8 @@ export default function AdminServicesPage() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     description: "",
+    min_loan_amount: 1000000,
+    max_loan_amount: 100000000,
   });
 
   const { data: services, isLoading } = useServices();
@@ -77,6 +82,8 @@ export default function AdminServicesPage() {
       name: "",
       description: "",
       workflowId: "",
+      minLoanAmount: 1000000,
+      maxLoanAmount: 100000000,
       documentRequirements: [],
       questionIds: [],
     });
@@ -137,7 +144,7 @@ export default function AdminServicesPage() {
       {
         onSuccess: () => {
           setEditingService(null);
-          setEditFormData({ name: "", description: "" });
+          setEditFormData({ name: "", description: "", min_loan_amount: 1000000, max_loan_amount: 100000000 });
         },
       }
     );
@@ -238,6 +245,42 @@ export default function AdminServicesPage() {
                   placeholder="Mô tả chi tiết về dịch vụ..."
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Giới hạn vay tối thiểu (VND)</Label>
+                  <Input
+                    type="text"
+                    value={formatVND(createFormData.minLoanAmount, false)}
+                    onChange={(e) => {
+                      const numValue = parseInt(e.target.value.replace(/[^\d]/g, '')) || 0;
+                      setCreateFormData((prev) => ({
+                        ...prev,
+                        minLoanAmount: numValue,
+                      }));
+                    }}
+                    placeholder="1.000.000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Giới hạn vay tối đa (VND)</Label>
+                  <Input
+                    type="text"
+                    value={formatVND(createFormData.maxLoanAmount, false)}
+                    onChange={(e) => {
+                      const numValue = parseInt(e.target.value.replace(/[^\d]/g, '')) || 0;
+                      setCreateFormData((prev) => ({
+                        ...prev,
+                        maxLoanAmount: numValue,
+                      }));
+                    }}
+                    placeholder="100.000.000"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Khách hàng phải nhập nhu cầu vay trong khoảng này khi tạo hồ sơ.
+              </p>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
@@ -454,6 +497,8 @@ export default function AdminServicesPage() {
                             setEditFormData({
                               name: service.name,
                               description: service.description,
+                              min_loan_amount: Number(service.min_loan_amount) || 1000000,
+                              max_loan_amount: Number(service.max_loan_amount) || 100000000,
                             });
                           }}
                         >
@@ -480,7 +525,7 @@ export default function AdminServicesPage() {
         onOpenChange={(open) => {
           if (!open) {
             setEditingService(null);
-            setEditFormData({ name: "", description: "" });
+            setEditFormData({ name: "", description: "", min_loan_amount: 1000000, max_loan_amount: 100000000 });
           }
         }}
       >
@@ -511,13 +556,43 @@ export default function AdminServicesPage() {
                 }
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Giới hạn vay tối thiểu (VND)</Label>
+                <Input
+                  type="text"
+                  value={formatVND(editFormData.min_loan_amount, false)}
+                  onChange={(e) => {
+                    const numValue = parseInt(e.target.value.replace(/[^\d]/g, '')) || 0;
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      min_loan_amount: numValue,
+                    }));
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Giới hạn vay tối đa (VND)</Label>
+                <Input
+                  type="text"
+                  value={formatVND(editFormData.max_loan_amount, false)}
+                  onChange={(e) => {
+                    const numValue = parseInt(e.target.value.replace(/[^\d]/g, '')) || 0;
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      max_loan_amount: numValue,
+                    }));
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setEditingService(null);
-                setEditFormData({ name: "", description: "" });
+                setEditFormData({ name: "", description: "", min_loan_amount: 1000000, max_loan_amount: 100000000 });
               }}
             >
               Hủy
