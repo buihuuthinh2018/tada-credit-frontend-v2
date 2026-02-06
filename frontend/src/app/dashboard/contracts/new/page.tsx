@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileBox, ArrowRight, FileText, CheckCircle, Users, User, Search, Loader2 } from "lucide-react";
+import { FileBox, ArrowRight, FileText, CheckCircle, Users, User, Search, Loader2, Eye, Info } from "lucide-react";
 import { User as UserType } from "@/types";
 
 export default function NewContractPage() {
@@ -42,6 +42,10 @@ export default function NewContractPage() {
   const [showTargetDialog, setShowTargetDialog] = useState(false);
   const [targetType, setTargetType] = useState<"self" | "other">("self");
   const [targetUserId, setTargetUserId] = useState("");
+  
+  // State for viewing service details
+  const [viewServiceId, setViewServiceId] = useState<string | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
   
   // Search user state
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +72,7 @@ export default function NewContractPage() {
   
   // Get selected service details
   const selectedService = services?.find((s) => s.id === selectedServiceId);
+  const viewService = services?.find((s) => s.id === viewServiceId);
   const minLoan = selectedService?.min_loan_amount ?? 1000000;
   const maxLoan = selectedService?.max_loan_amount ?? 100000000;
 
@@ -95,6 +100,16 @@ export default function NewContractPage() {
     setRequestedAmount(defaultAmount);
     setAmountError("");
     setShowTargetDialog(true);
+  };
+
+  const handleViewService = (serviceId: string) => {
+    setViewServiceId(serviceId);
+    setShowDetailDialog(true);
+  };
+
+  const resetDetailDialog = () => {
+    setShowDetailDialog(false);
+    setViewServiceId(null);
   };
 
   const handleSelectUser = (searchUser: UserType) => {
@@ -201,20 +216,30 @@ export default function NewContractPage() {
                       )}
                     </div>
 
-                    <Button
-                      className="w-full"
-                      onClick={() => handleSelectService(service.id)}
-                      disabled={createContract.isPending}
-                    >
-                      {createContract.isPending ? (
-                        "Đang tạo..."
-                      ) : (
-                        <>
-                          {isCTV ? "Tạo hồ sơ" : "Đăng ký ngay"}
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewService(service.id)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Chi tiết
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={() => handleSelectService(service.id)}
+                        disabled={createContract.isPending}
+                      >
+                        {createContract.isPending ? (
+                          "Đang tạo..."
+                        ) : (
+                          <>
+                            {isCTV ? "Tạo hồ sơ" : "Đăng ký ngay"}
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -233,6 +258,156 @@ export default function NewContractPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Service Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={(open) => !open && resetDetailDialog()}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-500" />
+              {viewService?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Thông tin chi tiết về gói vay
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewService && (
+            <div className="space-y-6 py-4">
+              {/* Description */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Mô tả</h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {viewService.description}
+                </p>
+              </div>
+
+              {/* Loan Amount Range */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Giới hạn vay</h3>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-800 font-medium">
+                    {formatVND(viewService.min_loan_amount ?? 1000000, false)} - {formatVND(viewService.max_loan_amount ?? 100000000)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Required Documents */}
+              {viewService.documents && viewService.documents.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-green-600" />
+                    Tài liệu cần thiết ({viewService.documents.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {viewService.documents.map((doc, idx) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-semibold mt-0.5">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {doc.document_requirement.name}
+                            {doc.is_required && (
+                              <span className="ml-2 text-xs text-red-500">*</span>
+                            )}
+                          </p>
+                          {doc.document_requirement.description && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {doc.document_requirement.description}
+                            </p>
+                          )}
+                          {doc.document_requirement.file_type && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Định dạng: {doc.document_requirement.file_type}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Survey Questions */}
+              {viewService.questions && viewService.questions.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-purple-600" />
+                    Câu hỏi khảo sát ({viewService.questions.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {viewService.questions.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-semibold mt-0.5">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {q.content}
+                            {q.isRequired && (
+                              <span className="ml-2 text-xs text-red-500">*</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Loại: {q.type === 'text' ? 'Văn bản' : q.type === 'select' ? 'Một lựa chọn' : q.type === 'multiselect' ? 'Nhiều lựa chọn' : q.type}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Other Configurations */}
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">Cấu hình khác</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <p className="text-sm text-gray-600">Trạng thái</p>
+                    <Badge variant={viewService.is_active ? "success" : "secondary"} className="mt-1">
+                      {viewService.is_active ? "Đang hoạt động" : "Tạm dừng"}
+                    </Badge>
+                  </div>
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <p className="text-sm text-gray-600">Hoa hồng</p>
+                    <Badge variant={viewService.commission_enabled ? "success" : "secondary"} className="mt-1">
+                      {viewService.commission_enabled ? "Có" : "Không"}
+                    </Badge>
+                  </div>
+                  {viewService.workflow && (
+                    <div className="p-3 bg-gray-50 rounded-lg border sm:col-span-2">
+                      <p className="text-sm text-gray-600">Quy trình</p>
+                      <p className="font-medium text-gray-900 mt-1">{viewService.workflow.name}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetDetailDialog}>
+              Đóng
+            </Button>
+            {viewService && (
+              <Button onClick={() => {
+                resetDetailDialog();
+                handleSelectService(viewService.id);
+              }}>
+                Đăng ký ngay
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* CTV Target Selection Dialog */}
       <Dialog open={showTargetDialog} onOpenChange={(open) => !open && resetDialog()}>

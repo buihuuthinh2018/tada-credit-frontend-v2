@@ -159,9 +159,9 @@ export default function AdminServicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Quản lý Dịch vụ</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Quản lý Dịch vụ</h1>
           <p className="text-gray-600">Cấu hình các dịch vụ trong hệ thống</p>
         </div>
         <Dialog
@@ -450,20 +450,20 @@ export default function AdminServicesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Tên dịch vụ</TableHead>
-                  <TableHead>Mô tả</TableHead>
+                  <TableHead className="hidden md:table-cell">Mô tả</TableHead>
                   <TableHead>Trạng thái</TableHead>
-                  <TableHead>Ngày tạo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Ngày tạo</TableHead>
                   <TableHead>Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {services.map((service) => (
                   <TableRow key={service.id}>
-                    <TableCell className="font-medium">#{service.id}</TableCell>
+                    <TableCell className="font-medium hidden sm:table-cell">#{service.id}</TableCell>
                     <TableCell>{service.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">
+                    <TableCell className="max-w-xs truncate hidden md:table-cell">
                       {service.description}
                     </TableCell>
                     <TableCell>
@@ -475,7 +475,7 @@ export default function AdminServicesPage() {
                         {service.is_active ? "Hoạt động" : "Tạm dừng"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {new Date(service.created_at).toLocaleDateString("vi-VN")}
                     </TableCell>
                     <TableCell>

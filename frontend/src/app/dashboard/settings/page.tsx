@@ -47,7 +47,7 @@ export default function DashboardSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Cài đặt</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Cài đặt</h1>
         <p className="text-gray-600">Quản lý thông tin tài khoản của bạn</p>
       </div>
 

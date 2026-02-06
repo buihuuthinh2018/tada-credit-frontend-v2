@@ -146,20 +146,20 @@ export default function AdminContractDetailPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <Link href="/admin/contracts">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại
+            <Button variant="ghost" size="sm" className="shrink-0">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Quay lại</span>
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-bold">Hồ sơ {contract.contract_number || `#${contract.id.slice(0, 8)}`}</h1>
-            <p className="text-gray-500">{contract.service?.name}</p>
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold truncate">Hồ sơ {contract.contract_number || `#${contract.id.slice(0, 8)}`}</h1>
+            <p className="text-sm text-gray-500">{contract.service?.name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {contract.stage && <StageBadge stage={contract.stage} variant="solid" />}
           {contract.stage?.code && !["COMPLETED", "CANCELLED", "REJECTED"].includes(contract.stage.code) && (
             <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>
@@ -303,21 +303,21 @@ export default function AdminContractDetailPage({
       </div>
 
       <Tabs defaultValue="documents" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
+        <TabsList className="w-full flex overflow-x-auto">
+          <TabsTrigger value="documents" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <FileText className="w-4 h-4 hidden sm:block" />
             Tài liệu
           </TabsTrigger>
-          <TabsTrigger value="info" className="flex items-center gap-2">
-            <User className="w-4 h-4" />
+          <TabsTrigger value="info" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <User className="w-4 h-4 hidden sm:block" />
             Thông tin
           </TabsTrigger>
-          <TabsTrigger value="answers" className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4" />
+          <TabsTrigger value="answers" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <CreditCard className="w-4 h-4 hidden sm:block" />
             Câu trả lời
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="w-4 h-4" />
+          <TabsTrigger value="history" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <History className="w-4 h-4 hidden sm:block" />
             Lịch sử
           </TabsTrigger>
         </TabsList>
@@ -401,7 +401,7 @@ export default function AdminContractDetailPage({
                 <CardTitle>Thông tin khoản vay</CardTitle>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <dt className="text-sm font-medium text-blue-600">Nhu cầu vay</dt>
                     <dd className="mt-1 text-xl font-bold text-blue-800">
@@ -433,7 +433,7 @@ export default function AdminContractDetailPage({
                 <CardTitle>Thông tin người dùng</CardTitle>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-2 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Họ tên</dt>
                     <dd className="mt-1 text-sm">

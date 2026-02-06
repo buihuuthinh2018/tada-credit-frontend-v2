@@ -322,9 +322,9 @@ export default function AdminWorkflowsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Cấu hình Workflow</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Cấu hình Workflow</h1>
           <p className="text-gray-600">
             Quản lý các quy trình duyệt hồ sơ trong hệ thống
           </p>
@@ -812,11 +812,11 @@ export default function AdminWorkflowsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="hidden sm:table-cell">ID</TableHead>
                   <TableHead>Tên workflow</TableHead>
-                  <TableHead>Mô tả</TableHead>
-                  <TableHead>Số stages</TableHead>
-                  <TableHead>Số transitions</TableHead>
+                  <TableHead className="hidden md:table-cell">Mô tả</TableHead>
+                  <TableHead className="hidden sm:table-cell">Số stages</TableHead>
+                  <TableHead className="hidden sm:table-cell">Số transitions</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Hành động</TableHead>
                 </TableRow>
@@ -824,17 +824,17 @@ export default function AdminWorkflowsPage() {
               <TableBody>
                 {workflows.map((workflow) => (
                   <TableRow key={workflow.id}>
-                    <TableCell className="font-medium">#{workflow.id}</TableCell>
+                    <TableCell className="font-medium hidden sm:table-cell">#{workflow.id}</TableCell>
                     <TableCell>{workflow.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">
+                    <TableCell className="max-w-xs truncate hidden md:table-cell">
                       {workflow.description || "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant="secondary">
                         {workflow.stages?.length || 0} stages
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant="secondary">
                         {workflow.transitions?.length || 0} transitions
                       </Badge>

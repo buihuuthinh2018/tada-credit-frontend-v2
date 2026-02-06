@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "TADA Credit - Financial Service Platform",
   description: "A scalable, configurable platform for financial services, credit workflows, and wallet management",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
 
 export default function RootLayout({

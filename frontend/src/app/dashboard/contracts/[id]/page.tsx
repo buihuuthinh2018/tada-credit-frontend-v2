@@ -409,6 +409,17 @@ export default function ContractDetailPage({
                 <p className="font-medium">{contract.service?.name}</p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">Số tiền vay</p>
+                <p className="font-medium text-blue-600">
+                  {contract.requested_amount
+                    ? new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(contract.requested_amount)
+                    : "Chưa xác định"}
+                </p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">Ngày tạo</p>
                 <p className="font-medium">
                   {new Date(contract.created_at).toLocaleDateString("vi-VN")}
@@ -428,6 +439,17 @@ export default function ContractDetailPage({
                     : "Chưa nộp"}
                 </p>
               </div>
+              {contract.disbursed_amount && contract.disbursed_amount > 0 && (
+                <div>
+                  <p className="text-sm text-gray-500">Số tiền giải ngân</p>
+                  <p className="font-medium text-green-600">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(contract.disbursed_amount)}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -590,6 +612,43 @@ export default function ContractDetailPage({
           ))}
         </div>
       </div>
+
+      {/* Contract Basic Info */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-gray-500">Mã hồ sơ</p>
+              <p className="font-medium">
+                {contract.contract_number || `#${contract.id.slice(0, 8)}`}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Số tiền vay</p>
+              <p className="font-semibold text-blue-600 text-lg">
+                {contract.requested_amount
+                  ? new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(contract.requested_amount)
+                  : "Chưa xác định"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Ngày tạo</p>
+              <p className="font-medium">
+                {new Date(contract.created_at).toLocaleDateString("vi-VN")}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Trạng thái</p>
+              <div className="mt-1">
+                <StageBadge stage={contract.stage} variant="solid" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Step Content */}
       <Card>

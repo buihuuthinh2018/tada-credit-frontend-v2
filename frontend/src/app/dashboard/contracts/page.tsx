@@ -103,9 +103,9 @@ export default function ContractsPage() {
   ) => {
     if (isLoading) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
           ))}
         </div>
       );
@@ -114,11 +114,13 @@ export default function ContractsPage() {
     if (!contracts?.data || contracts.data.length === 0) {
       return (
         <div className="text-center py-12 text-gray-500">
-          <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-gray-300" />
+          </div>
           <p className="text-lg font-medium">Chưa có hồ sơ nào</p>
           <p className="text-sm mt-2">Bắt đầu bằng cách tạo hồ sơ mới</p>
           <Link href="/dashboard/contracts/new">
-            <Button className="mt-4">
+            <Button className="mt-4 bg-linear-to-r from-blue-600 to-indigo-600">
               <Plus className="w-4 h-4 mr-2" />
               Tạo hồ sơ đầu tiên
             </Button>
@@ -129,63 +131,103 @@ export default function ContractsPage() {
 
     return (
       <>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Mã hồ sơ</TableHead>
-              {showCustomer && <TableHead>Khách hàng</TableHead>}
-              <TableHead>Dịch vụ</TableHead>
-              <TableHead>Ngày tạo</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              <TableHead>Hành động</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contracts.data.map((contract) => (
-              <TableRow key={contract.id}>
-                <TableCell className="font-medium font-mono">
-                  {contract.contract_number || `#${contract.id.slice(0, 8)}`}
-                </TableCell>
-                {showCustomer && (
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{contract.user?.fullname || "N/A"}</span>
-                      <span className="text-xs text-muted-foreground">{contract.user?.phone}</span>
-                    </div>
-                  </TableCell>
-                )}
-                <TableCell>{contract.service?.name || "Dịch vụ"}</TableCell>
-                <TableCell>
-                  {new Date(contract.created_at).toLocaleDateString("vi-VN")}
-                </TableCell>
-                <TableCell>
+        {/* Mobile card list */}
+        <div className="sm:hidden space-y-2">
+          {contracts.data.map((contract) => (
+            <Link key={contract.id} href={`/dashboard/contracts/${contract.id}`} className="block">
+              <div className="p-3.5 border border-gray-100 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono font-semibold text-sm text-gray-900">
+                    #{contract.contract_number || contract.id.slice(0, 8)}
+                  </span>
                   <StageBadge stage={contract.stage} />
-                </TableCell>
-                <TableCell>
-                  <Link href={`/dashboard/contracts/${contract.id}`}>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4 mr-1" />
-                      Chi tiết
-                    </Button>
-                  </Link>
-                </TableCell>
+                </div>
+                <p className="text-sm text-gray-600 truncate">{contract.service?.name || "Dịch vụ"}</p>
+                {contract.requested_amount && (
+                  <p className="text-sm font-semibold text-blue-600 mt-1">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(contract.requested_amount)}
+                  </p>
+                )}
+                {showCustomer && contract.user && (
+                  <p className="text-xs text-gray-400 mt-1">{contract.user.fullname} · {contract.user.phone}</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">{new Date(contract.created_at).toLocaleDateString("vi-VN")}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã hồ sơ</TableHead>
+                {showCustomer && <TableHead>Khách hàng</TableHead>}
+                <TableHead>Dịch vụ</TableHead>
+                <TableHead>Số tiền vay</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Hành động</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {contracts.data.map((contract) => (
+                <TableRow key={contract.id}>
+                  <TableCell className="font-medium font-mono">
+                    {contract.contract_number || `#${contract.id.slice(0, 8)}`}
+                  </TableCell>
+                  {showCustomer && (
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{contract.user?.fullname || "N/A"}</span>
+                        <span className="text-xs text-muted-foreground">{contract.user?.phone}</span>
+                      </div>
+                    </TableCell>
+                  )}
+                  <TableCell>{contract.service?.name || "Dịch vụ"}</TableCell>
+                  <TableCell className="font-semibold text-blue-600">
+                    {contract.requested_amount
+                      ? new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        }).format(contract.requested_amount)
+                      : "—"}
+                  </TableCell>
+                  <TableCell>{new Date(contract.created_at).toLocaleDateString("vi-VN")}</TableCell>
+                  <TableCell><StageBadge stage={contract.stage} /></TableCell>
+                  <TableCell>
+                    <Link href={`/dashboard/contracts/${contract.id}`}>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4 mr-1" /> Chi tiết
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
           >
             Trang trước
           </Button>
           <span className="text-sm text-muted-foreground">
-            Trang {page} / {Math.ceil((contracts.meta?.total || 0) / 10)}
+            {page} / {Math.ceil((contracts.meta?.total || 0) / 10)}
           </span>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setPage(page + 1)}
             disabled={page >= Math.ceil((contracts.meta?.total || 0) / 10)}
           >
@@ -204,7 +246,7 @@ export default function ContractsPage() {
     stages: typeof ownedStages,
     setPage: (p: number) => void
   ) => (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
       <Select
         value={serviceFilter}
         onValueChange={(value) => {
@@ -212,7 +254,7 @@ export default function ContractsPage() {
           setPage(1);
         }}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-full sm:w-50">
           <SelectValue placeholder="Lọc theo dịch vụ" />
         </SelectTrigger>
         <SelectContent>
@@ -233,7 +275,7 @@ export default function ContractsPage() {
         }}
         disabled={serviceFilter === "all"}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-full sm:w-50">
           <SelectValue placeholder={serviceFilter === "all" ? "Chọn dịch vụ trước" : "Lọc theo trạng thái"} />
         </SelectTrigger>
         <SelectContent>
@@ -257,25 +299,25 @@ export default function ContractsPage() {
   // For non-CTV users, show simple view
   if (!isCTV) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Hồ sơ của tôi</h1>
-            <p className="text-gray-600">Quản lý các hồ sơ vay/dịch vụ của bạn</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Hồ sơ của tôi</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Quản lý các hồ sơ vay/dịch vụ của bạn</p>
           </div>
-          <Link href="/dashboard/contracts/new">
-            <Button>
+          <Link href="/dashboard/contracts/new" className="hidden sm:block">
+            <Button className="bg-linear-to-r from-blue-600 to-indigo-600">
               <Plus className="w-4 h-4 mr-2" />
               Tạo hồ sơ mới
             </Button>
           </Link>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle>Danh sách hồ sơ</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Danh sách hồ sơ</CardTitle>
                 <CardDescription>Tất cả các hồ sơ đã nộp</CardDescription>
               </div>
               {renderFilters(
@@ -298,14 +340,14 @@ export default function ContractsPage() {
 
   // CTV view with tabs
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Quản lý hồ sơ</h1>
-          <p className="text-gray-600">Hồ sơ cá nhân và hồ sơ khách hàng của bạn</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Quản lý hồ sơ</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Hồ sơ cá nhân và hồ sơ khách hàng của bạn</p>
         </div>
-        <Link href="/dashboard/contracts/new">
-          <Button>
+        <Link href="/dashboard/contracts/new" className="hidden sm:block">
+          <Button className="bg-linear-to-r from-blue-600 to-indigo-600">
             <Plus className="w-4 h-4 mr-2" />
             Tạo hồ sơ mới
           </Button>
@@ -313,7 +355,7 @@ export default function ContractsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-2 max-w-full sm:max-w-md">
           <TabsTrigger value="owned" className="flex items-center gap-2">
             <User className="w-4 h-4" />
             Hồ sơ của tôi
@@ -335,12 +377,12 @@ export default function ContractsPage() {
         </TabsList>
 
         <TabsContent value="owned">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <CardTitle>Hồ sơ của tôi</CardTitle>
-                  <CardDescription>Các hồ sơ vay do chính bạn tạo cho bản thân</CardDescription>
+                  <CardTitle className="text-base sm:text-lg">Hồ sơ của tôi</CardTitle>
+                  <CardDescription>Các hồ sơ do bạn tạo cho bản thân</CardDescription>
                 </div>
                 {renderFilters(
                   ownedServiceFilter,
@@ -359,11 +401,11 @@ export default function ContractsPage() {
         </TabsContent>
 
         <TabsContent value="created">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <CardTitle>Hồ sơ khách hàng</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Hồ sơ khách hàng</CardTitle>
                   <CardDescription>Các hồ sơ bạn đã tạo dùm cho khách hàng</CardDescription>
                 </div>
                 {renderFilters(

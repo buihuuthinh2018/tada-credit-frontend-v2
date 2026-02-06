@@ -295,7 +295,7 @@ export default function AdminCommissionPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Quản lý Hoa hồng & KPI</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Quản lý Hoa hồng & KPI</h1>
           <p className="text-gray-600">
             Cấu hình tỷ lệ hoa hồng, KPI và quản lý snapshot hàng tháng
           </p>
@@ -303,21 +303,21 @@ export default function AdminCommissionPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="configs" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Cấu hình hoa hồng
+        <TabsList className="w-full flex overflow-x-auto">
+          <TabsTrigger value="configs" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Settings className="w-4 h-4 hidden sm:block" />
+            Cấu hình
           </TabsTrigger>
-          <TabsTrigger value="kpi" className="flex items-center gap-2">
-            <Award className="w-4 h-4" />
-            KPI Tiers
+          <TabsTrigger value="kpi" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Award className="w-4 h-4 hidden sm:block" />
+            KPI
           </TabsTrigger>
-          <TabsTrigger value="snapshots" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
+          <TabsTrigger value="snapshots" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <FileText className="w-4 h-4 hidden sm:block" />
             Snapshots
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
+          <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Calendar className="w-4 h-4 hidden sm:block" />
             Cài đặt
           </TabsTrigger>
         </TabsList>
@@ -325,7 +325,7 @@ export default function AdminCommissionPage() {
         {/* Commission Configs Tab */}
         <TabsContent value="configs" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle>Cấu hình tỷ lệ hoa hồng</CardTitle>
                 <CardDescription>
@@ -409,6 +409,7 @@ export default function AdminCommissionPage() {
                   ))}
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -457,6 +458,7 @@ export default function AdminCommissionPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -465,7 +467,7 @@ export default function AdminCommissionPage() {
         {/* KPI Tiers Tab */}
         <TabsContent value="kpi" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle>KPI Tiers</CardTitle>
                 <CardDescription>
@@ -607,6 +609,7 @@ export default function AdminCommissionPage() {
                   ))}
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -690,6 +693,7 @@ export default function AdminCommissionPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -698,14 +702,14 @@ export default function AdminCommissionPage() {
         {/* Snapshots Tab */}
         <TabsContent value="snapshots" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle>Commission Snapshots</CardTitle>
                 <CardDescription>
                   Tổng kết hoa hồng và KPI hàng tháng
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <div className="flex items-center gap-2">
                   <Label>Năm:</Label>
                   <Select
@@ -768,6 +772,7 @@ export default function AdminCommissionPage() {
                   ))}
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -848,6 +853,7 @@ export default function AdminCommissionPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

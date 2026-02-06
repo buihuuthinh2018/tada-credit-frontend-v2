@@ -156,22 +156,22 @@ export default function WalletPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Ví của tôi</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold">Ví của tôi</h1>
 
       {/* Balance Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <CardTitle>Số dư hiện tại</CardTitle>
             <CardDescription>Số tiền có sẵn trong ví</CardDescription>
           </div>
           <Wallet className="h-8 w-8 text-muted-foreground" />
         </CardHeader>
-        <CardContent className="flex items-center justify-between">
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           {balanceLoading ? (
             <Skeleton className="h-12 w-48" />
           ) : (
-            <div className="text-4xl font-bold text-green-600">
+            <div className="text-3xl sm:text-4xl font-bold text-green-600">
               {formatVND(walletBalance)}
             </div>
           )}
@@ -410,6 +410,7 @@ export default function WalletPage() {
                 </div>
               ) : transactions?.data && transactions.data.length > 0 ? (
                 <>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -462,6 +463,7 @@ export default function WalletPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                   <div className="flex justify-between items-center mt-4">
                     <Button
                       variant="outline"
@@ -509,6 +511,7 @@ export default function WalletPage() {
                 </div>
               ) : withdrawals?.data && withdrawals.data.length > 0 ? (
                 <>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -538,7 +541,7 @@ export default function WalletPage() {
                             {withdrawal.method === "CRYPTO" ? (
                               <div className="text-xs">
                                 <p className="font-medium">USDT TRC-20</p>
-                                <p className="text-gray-500 truncate max-w-[150px]" title={withdrawal.account_info?.cryptoAddress}>
+                                <p className="text-gray-500 truncate max-w-37.5" title={withdrawal.account_info?.cryptoAddress}>
                                   {withdrawal.account_info?.cryptoAddress || "-"}
                                 </p>
                               </div>
@@ -571,6 +574,7 @@ export default function WalletPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                   <div className="flex justify-between items-center mt-4">
                     <Button
                       variant="outline"

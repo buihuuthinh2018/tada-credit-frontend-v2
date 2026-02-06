@@ -80,30 +80,28 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Quản lý Users</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Quản lý Users</h1>
           <p className="text-gray-600">Xem và quản lý tất cả người dùng</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Danh sách Users</CardTitle>
               <CardDescription>
                 Tổng cộng {users?.meta?.total || 0} người dùng
               </CardDescription>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Tìm theo ID, tên, email, SĐT..."
-                  className="pl-8 w-72"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Tìm theo ID, tên, email, SĐT..."
+                className="pl-8 w-full sm:w-72"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
             </div>
           </div>
         </CardHeader>
@@ -116,6 +114,7 @@ export default function AdminUsersPage() {
             </div>
           ) : users?.data && users.data.length > 0 ? (
             <>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -206,6 +205,7 @@ export default function AdminUsersPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               <div className="flex justify-between items-center mt-4">
                 <Button
                   variant="outline"

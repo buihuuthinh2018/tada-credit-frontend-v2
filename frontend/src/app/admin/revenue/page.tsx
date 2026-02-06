@@ -81,7 +81,7 @@ export default function AdminRevenuePage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Thống kê doanh thu</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Thống kê doanh thu</h1>
         <p className="text-gray-600">
           Xem thống kê doanh thu từ các hồ sơ giải ngân
         </p>
@@ -226,7 +226,7 @@ export default function AdminRevenuePage() {
               ) : (
                 <div className="space-y-2">
                   {/* Header */}
-                  <div className="grid grid-cols-5 gap-4 px-4 py-2 bg-gray-100 rounded-lg font-medium text-sm text-gray-700">
+                  <div className="hidden sm:grid grid-cols-5 gap-4 px-4 py-2 bg-gray-100 rounded-lg font-medium text-sm text-gray-700">
                     <div>Thời gian</div>
                     <div className="text-right">Giải ngân</div>
                     <div className="text-right">Tỷ lệ TB</div>
@@ -244,7 +244,7 @@ export default function AdminRevenuePage() {
                           className="flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                           onClick={() => togglePeriod(row.period)}
                         >
-                          <div className="flex-1 grid grid-cols-5 gap-4 items-center">
+                          <div className="flex-1 grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 items-center">
                             <div className="flex items-center gap-2">
                               {isExpanded ? (
                                 <ChevronDown className="h-4 w-4" />
@@ -259,13 +259,13 @@ export default function AdminRevenuePage() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right text-sm sm:text-base">
                               {formatVND(Number(row.disbursement))}
                             </div>
                             <div className="text-right">
                               <Badge variant="outline">{row.averagePercentage}%</Badge>
                             </div>
-                            <div className="text-right text-green-600 font-medium">
+                            <div className="text-right text-green-600 font-medium text-sm sm:text-base">
                               {formatVND(Number(row.revenue))}
                             </div>
                             <div className="text-right">
@@ -280,7 +280,7 @@ export default function AdminRevenuePage() {
                             <div className="text-sm font-medium text-gray-700 mb-2 mt-2">
                               Chi tiết {row.contracts.length} hợp đồng:
                             </div>
-                            <div className="bg-white rounded border">
+                            <div className="bg-white rounded border overflow-x-auto">
                               <Table>
                                 <TableHeader>
                                   <TableRow>
@@ -368,6 +368,7 @@ export default function AdminRevenuePage() {
                 </div>
               ) : (
                 <>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -410,6 +411,7 @@ export default function AdminRevenuePage() {
                       )}
                     </TableBody>
                   </Table>
+                  </div>
 
                   {/* Pagination */}
                   {byUserData?.pagination && byUserData.pagination.totalPages > 1 && (

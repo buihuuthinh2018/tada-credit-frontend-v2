@@ -189,7 +189,7 @@ export default function CommissionDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Hoa hồng của tôi</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Hoa hồng của tôi</h1>
         <p className="text-gray-600">
           Theo dõi thu nhập hoa hồng và KPI của bạn
         </p>
@@ -428,6 +428,7 @@ export default function CommissionDashboardPage() {
                   ))}
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -477,6 +478,7 @@ export default function CommissionDashboardPage() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -485,7 +487,7 @@ export default function CommissionDashboardPage() {
         {/* Snapshots Tab */}
         <TabsContent value="snapshots">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle>Tổng kết hàng tháng</CardTitle>
                 <CardDescription>
@@ -544,7 +546,7 @@ export default function CommissionDashboardPage() {
                           {getStatusBadge(snapshot.status)}
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3 pt-3 border-t">
                         <div>
                           <p className="text-xs text-gray-500">Hoa hồng cơ bản</p>
                           <p className="font-medium">

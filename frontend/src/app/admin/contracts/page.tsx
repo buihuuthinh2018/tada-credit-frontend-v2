@@ -96,7 +96,7 @@ export default function AdminContractsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Quản lý Hồ sơ</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Quản lý Hồ sơ</h1>
         <p className="text-gray-600">Xem và duyệt các hồ sơ vay</p>
       </div>
 
@@ -121,7 +121,7 @@ export default function AdminContractsPage() {
             {/* Filters Row */}
             <div className="flex flex-wrap gap-4 items-center">
               {/* Search Input */}
-              <div className="relative flex-1 min-w-[250px]">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Tìm theo mã hồ sơ, email, SĐT, họ tên..."
@@ -138,7 +138,7 @@ export default function AdminContractsPage() {
                   setServiceFilter(value);
                 }}
               >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-50">
                   <Filter className="w-4 h-4 mr-2 text-gray-400" />
                   <SelectValue placeholder="Loại dịch vụ" />
                 </SelectTrigger>
@@ -161,7 +161,7 @@ export default function AdminContractsPage() {
                 }}
                 disabled={serviceFilter === "all"}
               >
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-50">
                   <SelectValue placeholder={serviceFilter === "all" ? "Chọn dịch vụ trước" : "Trạng thái"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,6 +191,7 @@ export default function AdminContractsPage() {
             </div>
           ) : contracts?.data && contracts.data.length > 0 ? (
             <>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -240,6 +241,7 @@ export default function AdminContractsPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               <div className="flex justify-between items-center mt-4">
                 <Button
                   variant="outline"

@@ -150,7 +150,7 @@ export default function ReferralPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Giới thiệu</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Giới thiệu</h1>
         <p className="text-gray-600">
           {isCTV
             ? "Quản lý người được giới thiệu và theo dõi hoa hồng"
@@ -309,6 +309,7 @@ export default function ReferralPage() {
             </div>
           ) : referrals?.data && referrals.data.length > 0 ? (
             <>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -331,6 +332,7 @@ export default function ReferralPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {/* Pagination */}
               {referrals.meta.totalPages > 1 && (

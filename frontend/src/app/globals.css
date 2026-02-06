@@ -121,4 +121,8 @@
   .ring-ring {
     --tw-ring-color: hsl(var(--ring));
   }
+  /* Safe area for mobile bottom nav */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
