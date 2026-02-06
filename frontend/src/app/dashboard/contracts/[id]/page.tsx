@@ -484,7 +484,7 @@ export default function ContractDetailPage({
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    {doc.files?.map((file: { id: string; file_name?: string; file_url?: string }) => (
+                    {doc.files?.map((file: { id: string; file_name: string | null; file_url?: string | null }) => (
                       <div
                         key={file.id}
                         className="text-sm flex items-center gap-1 bg-gray-50 px-3 py-1 rounded-lg"
@@ -525,14 +525,17 @@ export default function ContractDetailPage({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {item.transition?.name || "Khởi tạo"}
+                          {item.from_stage?.name || "Bắt đầu"} → {item.to_stage?.name}
                         </span>
-                        {item.toStage && (
-                          <Badge variant="secondary">{item.toStage.name}</Badge>
+                        {item.to_stage && (
+                          <Badge variant="secondary" style={{ backgroundColor: item.to_stage.color, color: '#fff' }}>
+                            {item.to_stage.name}
+                          </Badge>
                         )}
                       </div>
                       <p className="text-sm text-gray-500">
                         {new Date(item.created_at).toLocaleString("vi-VN")}
+                        {item.changed_by_user && ` bởi ${item.changed_by_user.fullname}`}
                       </p>
                     </div>
                   </div>
@@ -610,12 +613,8 @@ export default function ContractDetailPage({
             <div className="space-y-6">
               {contract.service?.questions
                 ?.sort(
-                  (
-                    a: { sort_order?: number; order?: number },
-                    b: { sort_order?: number; order?: number },
-                  ) =>
-                    (a.sort_order ?? a.order ?? 0) -
-                    (b.sort_order ?? b.order ?? 0),
+                  (a, b) =>
+                    (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
                 )
                 .map(
                   (q: {

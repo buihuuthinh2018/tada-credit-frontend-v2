@@ -500,7 +500,7 @@ export default function AdminContractDetailPage({
                     <div key={history.id} className="flex items-start gap-4 border-l-2 pl-4 pb-4">
                       <div className="flex-1">
                         <p className="font-medium">
-                          {history.fromStage?.name || "Bắt đầu"} → {history.toStage?.name}
+                          {history.from_stage?.name || "Bắt đầu"} → {history.to_stage?.name}
                         </p>
                         {history.note && (
                           <p className="text-sm text-gray-500">
@@ -509,7 +509,7 @@ export default function AdminContractDetailPage({
                         )}
                         <p className="text-xs text-gray-400">
                           {new Date(history.created_at).toLocaleString("vi-VN")}
-                          {history.changedByUser && ` bởi ${history.changedByUser.fullname}`}
+                          {history.changed_by_user && ` bởi ${history.changed_by_user.fullname}`}
                         </p>
                       </div>
                     </div>

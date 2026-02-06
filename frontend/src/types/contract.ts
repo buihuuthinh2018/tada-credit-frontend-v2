@@ -79,8 +79,8 @@ export interface ContractHistory {
   metadata?: Record<string, unknown>;
   created_at: string;
   
-  fromStage?: WorkflowStage;
-  toStage?: WorkflowStage;
+  from_stage?: WorkflowStage;
+  to_stage?: WorkflowStage;
   transition?: WorkflowTransition;
-  changedByUser?: User;
+  changed_by_user?: { id: string; fullname: string; email: string };
 }
