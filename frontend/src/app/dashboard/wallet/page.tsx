@@ -424,10 +424,15 @@ export default function WalletPage() {
                       {transactions.data.map((tx) => (
                         <TableRow key={tx.id}>
                           <TableCell>
-                            {new Date(tx.createdAt).toLocaleDateString("vi-VN")}
+                            <div>
+                              {new Date(tx.created_at).toLocaleDateString("vi-VN")}
+                              <div className="text-xs text-gray-500">
+                                {new Date(tx.created_at).toLocaleTimeString("vi-VN")}
+                              </div>
+                            </div>
                           </TableCell>
                           <TableCell>
-                            {tx.entryType === "CREDIT" ? (
+                            {tx.type === "CREDIT" ? (
                               <Badge variant="success" className="gap-1">
                                 <ArrowDownCircle className="w-3 h-3" />
                                 Cộng
@@ -441,18 +446,18 @@ export default function WalletPage() {
                           </TableCell>
                           <TableCell
                             className={
-                              tx.entryType === "CREDIT"
+                              tx.type === "CREDIT"
                                 ? "text-green-600"
                                 : "text-red-600"
                             }
                           >
-                            {tx.entryType === "CREDIT" ? "+" : "-"}
+                            {tx.type === "CREDIT" ? "+" : "-"}
                             {formatVND(parseFloat(tx.amount))}
                           </TableCell>
                           <TableCell>
-                            {formatVND(parseFloat(tx.balanceAfter))}
+                            {formatVND(parseFloat(tx.balance_after))}
                           </TableCell>
-                          <TableCell>{tx.description}</TableCell>
+                          <TableCell>{tx.description || "-"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

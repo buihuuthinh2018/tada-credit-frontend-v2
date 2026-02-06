@@ -11,15 +11,15 @@ export interface Wallet {
 
 export interface LedgerEntry {
   id: string;
-  walletId: string;
-  transactionId: string;
-  entryType: "DEBIT" | "CREDIT";
+  wallet_id: string;
+  type: "DEBIT" | "CREDIT";
   amount: string;
-  balanceBefore: string;
-  balanceAfter: string;
-  description: string;
-  metadata: Record<string, unknown>;
-  createdAt: string;
+  reference_id: string | null;
+  reference_type: string | null;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  balance_after: string;
+  created_at: string;
 }
 
 export interface WalletTransaction extends LedgerEntry {

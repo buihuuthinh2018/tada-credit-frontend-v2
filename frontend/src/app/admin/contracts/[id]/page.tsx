@@ -369,9 +369,9 @@ export default function AdminContractDetailPage({
                             <FileCard
                               key={file.id}
                               fileId={file.id}
-                              fileName={file.fileName || "document"}
-                              mimeType={file.mimeType || "application/octet-stream"}
-                              fileSize={file.fileSize || 0}
+                              fileName={file.file_name || "document"}
+                              mimeType={file.mime_type || "application/octet-stream"}
+                              fileSize={file.file_size || 0}
                             />
                           ))}
                         </div>

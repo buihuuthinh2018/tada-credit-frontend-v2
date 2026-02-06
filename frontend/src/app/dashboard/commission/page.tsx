@@ -39,25 +39,32 @@ import {
   Award,
   Calendar,
   ArrowUpRight,
-  ArrowDownRight
 } from "lucide-react";
 import apiClient from "@/lib/api-client";
+import { formatVND } from "@/lib/utils";
 
 // Types
 interface CommissionRecord {
   id: string;
   contract_id: string;
-  amount: number;
-  rate: number;
-  disbursement_amount: number | null;
+  amount: string;
+  rate: string;
+  disbursement_amount: string | null;
+  revenue_percentage: string | null;
+  total_revenue: string | null;
   status: string;
   created_at: string;
-  contract?: {
+  referred_user: {
+    id: string;
+    fullname: string;
+    email: string;
+  };
+  contract: {
     id: string;
     contract_number: string;
-    service?: { name: string };
-    client?: { fullname: string };
-  };
+    service: { name: string } | null;
+    user: { fullname: string } | null;
+  } | null;
 }
 
 interface CommissionSnapshot {
@@ -65,22 +72,34 @@ interface CommissionSnapshot {
   period_month: number;
   period_year: number;
   total_contracts: number;
-  total_disbursement: number;
-  base_commission: number;
-  bonus_commission: number;
-  total_commission: number;
+  total_disbursement: string;
+  base_commission: string;
+  bonus_commission: string;
+  total_commission: string;
   status: string;
   kpi_tier?: { name: string };
 }
 
 interface CommissionSummary {
-  totalEarned: number;
-  pendingAmount: number;
+  totalEarned: string;
+  pendingAmount: string;
   totalContracts: number;
   currentMonthContracts: number;
-  currentMonthEarned: number;
-  currentMonthDisbursement: number;
+  currentMonthEarned: string;
+  currentMonthDisbursement: string;
   currentKpiTier: { name: string } | null;
+  referredUsers: number;
+  walletBalance: string;
+}
+
+interface KpiTier {
+  id: string;
+  name: string;
+  role_code: string;
+  min_contracts: number | null;
+  min_disbursement: string | null;
+  bonus_amount: string;
+  tier_order: number;
 }
 
 // API functions
@@ -98,6 +117,17 @@ const fetchMySnapshots = async (year?: number) => {
   const params = year ? `?year=${year}` : "";
   const response = await apiClient.get(`/commission/snapshots${params}`);
   return response.data;
+};
+
+const fetchKpiTiers = async (): Promise<KpiTier[]> => {
+  const response = await apiClient.get("/commission/kpi-tiers");
+  return response.data;
+};
+
+const formatDisbursementShort = (value: number): string => {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(0)} tỷ`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}tr`;
+  return formatVND(value);
 };
 
 export default function CommissionDashboardPage() {
@@ -120,27 +150,39 @@ export default function CommissionDashboardPage() {
     queryFn: () => fetchMySnapshots(selectedYear),
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(value);
-  };
+  const { data: kpiTiers, isLoading: kpiLoading } = useQuery({
+    queryKey: ["kpi-tiers"],
+    queryFn: fetchKpiTiers,
+  });
 
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(2)}%`;
+  const formatPercent = (value: string | number) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return `${(num * 100).toFixed(2)}%`;
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "CREDITED":
+        return <Badge variant="default" className="bg-green-100 text-green-800">Đã cộng ví</Badge>;
       case "PAID":
         return <Badge variant="default" className="bg-green-100 text-green-800">Đã thanh toán</Badge>;
       case "PENDING":
         return <Badge variant="secondary">Chờ xử lý</Badge>;
       case "PROCESSED":
         return <Badge variant="default" className="bg-blue-100 text-blue-800">Đã xử lý</Badge>;
+      case "CANCELLED":
+        return <Badge variant="destructive">Đã hủy</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getTierIcon = (tierOrder: number) => {
+    switch (tierOrder) {
+      case 1: return "🥉";
+      case 2: return "🥈";
+      case 3: return "🥇";
+      default: return "🏆";
     }
   };
 
@@ -166,7 +208,7 @@ export default function CommissionDashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(summary?.totalEarned || 0)}
+                  {formatVND(Number(summary?.totalEarned || 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Tổng thu nhập từ hoa hồng
@@ -187,7 +229,7 @@ export default function CommissionDashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(summary?.pendingAmount || 0)}
+                  {formatVND(Number(summary?.pendingAmount || 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Đang chờ xử lý vào ví
@@ -208,7 +250,7 @@ export default function CommissionDashboardPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(summary?.currentMonthEarned || 0)}
+                  {formatVND(Number(summary?.currentMonthEarned || 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {summary?.currentMonthContracts || 0} hợp đồng thành công
@@ -232,7 +274,7 @@ export default function CommissionDashboardPage() {
                   {summary?.currentKpiTier?.name || "Chưa đạt"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Giải ngân: {formatCurrency(summary?.currentMonthDisbursement || 0)}
+                  Giải ngân: {formatVND(Number(summary?.currentMonthDisbursement || 0))}
                 </p>
               </>
             )}
@@ -288,13 +330,13 @@ export default function CommissionDashboardPage() {
                               {record.contract?.contract_number || "N/A"}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {record.contract?.service?.name} • Tỷ lệ {formatPercent(record.rate)}
+                              {record.contract?.service?.name || "-"} • Tỷ lệ {formatPercent(record.rate)}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-green-600">
-                            +{formatCurrency(record.amount)}
+                            +{formatVND(Number(record.amount))}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(record.created_at).toLocaleDateString("vi-VN")}
@@ -326,33 +368,42 @@ export default function CommissionDashboardPage() {
                     <ul className="text-sm text-blue-800 space-y-1">
                       <li>• Hệ thống tổng kết hoa hồng vào cuối mỗi tháng</li>
                       <li>• KPI được tính dựa trên số HĐ và tổng giải ngân</li>
-                      <li>• Thưởng KPI = Tổng giải ngân × Tỷ lệ thưởng tier</li>
+                      <li>• Thưởng KPI là số tiền cố định theo tier đạt được</li>
                       <li>• Thưởng sẽ được cộng vào ví sau khi admin duyệt</li>
                     </ul>
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Award className="w-5 h-5 text-yellow-500" />
-                        <span className="font-medium">Bronze</span>
-                      </div>
-                      <span className="text-sm text-gray-600">≥ 5 HĐ hoặc ≥ 500tr</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Award className="w-5 h-5 text-gray-400" />
-                        <span className="font-medium">Silver</span>
-                      </div>
-                      <span className="text-sm text-gray-600">≥ 10 HĐ hoặc ≥ 1 tỷ</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Award className="w-5 h-5 text-yellow-400" />
-                        <span className="font-medium">Gold</span>
-                      </div>
-                      <span className="text-sm text-gray-600">≥ 20 HĐ hoặc ≥ 2 tỷ</span>
-                    </div>
+                    {kpiLoading ? (
+                      <>
+                        {[...Array(3)].map((_, i) => (
+                          <Skeleton key={i} className="h-14 w-full" />
+                        ))}
+                      </>
+                    ) : kpiTiers && kpiTiers.length > 0 ? (
+                      kpiTiers.map((tier) => (
+                        <div key={tier.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getTierIcon(tier.tier_order)}</span>
+                            <div>
+                              <span className="font-medium">{tier.name}</span>
+                              <p className="text-xs text-gray-500">
+                                Thưởng: {formatVND(Number(tier.bonus_amount))}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            {tier.min_contracts ? `≥ ${tier.min_contracts} HĐ` : ""}
+                            {tier.min_contracts && tier.min_disbursement ? " và " : ""}
+                            {tier.min_disbursement ? `≥ ${formatDisbursementShort(Number(tier.min_disbursement))}` : ""}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-gray-500 py-4">
+                        Chưa có cấu hình KPI
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -403,16 +454,16 @@ export default function CommissionDashboardPage() {
                           {record.contract?.service?.name || "-"}
                         </TableCell>
                         <TableCell>
-                          {record.contract?.client?.fullname || "-"}
+                          {record.contract?.user?.fullname || "-"}
                         </TableCell>
                         <TableCell>
                           {record.disbursement_amount
-                            ? formatCurrency(record.disbursement_amount)
+                            ? formatVND(Number(record.disbursement_amount))
                             : "-"}
                         </TableCell>
                         <TableCell>{formatPercent(record.rate)}</TableCell>
                         <TableCell className="font-bold text-green-600">
-                          +{formatCurrency(record.amount)}
+                          +{formatVND(Number(record.amount))}
                         </TableCell>
                         <TableCell>{getStatusBadge(record.status)}</TableCell>
                       </TableRow>
@@ -482,13 +533,13 @@ export default function CommissionDashboardPage() {
                             </p>
                             <p className="text-sm text-gray-500">
                               {snapshot.total_contracts} hợp đồng • Giải ngân{" "}
-                              {formatCurrency(snapshot.total_disbursement)}
+                              {formatVND(Number(snapshot.total_disbursement))}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">
-                            {formatCurrency(snapshot.total_commission)}
+                            {formatVND(Number(snapshot.total_commission))}
                           </p>
                           {getStatusBadge(snapshot.status)}
                         </div>
@@ -497,7 +548,7 @@ export default function CommissionDashboardPage() {
                         <div>
                           <p className="text-xs text-gray-500">Hoa hồng cơ bản</p>
                           <p className="font-medium">
-                            {formatCurrency(snapshot.base_commission)}
+                            {formatVND(Number(snapshot.base_commission))}
                           </p>
                         </div>
                         <div>
@@ -509,7 +560,7 @@ export default function CommissionDashboardPage() {
                         <div>
                           <p className="text-xs text-gray-500">Thưởng KPI</p>
                           <p className="font-medium text-green-600">
-                            +{formatCurrency(snapshot.bonus_commission)}
+                            +{formatVND(Number(snapshot.bonus_commission))}
                           </p>
                         </div>
                       </div>

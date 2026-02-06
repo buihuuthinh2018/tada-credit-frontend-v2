@@ -39,7 +39,7 @@ interface DocumentFileViewerProps {
 }
 
 /**
- * Component to view/download document files from R2 storage
+ * Component to view/download document files
  * Handles presigned URLs automatically
  */
 export function DocumentFileViewer({

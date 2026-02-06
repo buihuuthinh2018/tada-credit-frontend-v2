@@ -32,12 +32,12 @@ export interface ContractDocument {
 
 export interface DocumentFile {
   id: string;
-  contractDocumentId: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedAt: string;
+  contract_document_id: string;
+  file_url: string;
+  file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  uploaded_at: string;
 }
 
 export interface ReviewDocumentRequest {

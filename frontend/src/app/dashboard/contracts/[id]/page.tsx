@@ -716,7 +716,7 @@ export default function ContractDetailPage({
                                 className="flex items-center gap-2"
                               >
                                 <CheckCircle className="w-4 h-4" />
-                                {file.fileName}
+                                {file.file_name}
                               </li>
                             ))}
                           </ul>

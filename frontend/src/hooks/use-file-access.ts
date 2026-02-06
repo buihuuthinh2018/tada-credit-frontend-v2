@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, API_ORIGIN } from "@/lib/api-client";
 import { toast } from "sonner";
 
 // Types for file access
@@ -13,6 +13,18 @@ export interface FileUrlResponse {
 
 export interface BatchFileUrlsResponse {
   [fileId: string]: FileUrlResponse | { error: string };
+}
+
+/**
+ * Resolve a file URL from the backend.
+ * Proxy URLs (starting with /api/) are relative to the server origin.
+ * Absolute URLs are returned as-is.
+ */
+function resolveFileUrl(url: string): string {
+  if (url.startsWith('/')) {
+    return `${API_ORIGIN}${url}`;
+  }
+  return url;
 }
 
 /**
@@ -40,7 +52,10 @@ export function useFileUrl(
           params: { expiresIn, download },
         }
       );
-      return response.data;
+      return {
+        ...response.data,
+        url: resolveFileUrl(response.data.url),
+      };
     },
     enabled: enabled && !!fileId,
     // Cache for slightly less than the expiration time to ensure freshness
@@ -82,7 +97,16 @@ export function useBatchFileUrls(
           },
         }
       );
-      return response.data;
+      // Resolve proxy URLs in batch response
+      const resolved: BatchFileUrlsResponse = {};
+      for (const [id, val] of Object.entries(response.data)) {
+        if ('url' in val) {
+          resolved[id] = { ...val, url: resolveFileUrl(val.url) };
+        } else {
+          resolved[id] = val;
+        }
+      }
+      return resolved;
     },
     enabled: enabled && fileIds.length > 0,
     staleTime: (expiresIn - 60) * 1000,
@@ -118,7 +142,10 @@ export function usePrefetchFileUrl() {
           `/files/documents/${fileId}/url`,
           { params: { expiresIn } }
         );
-        return response.data;
+        return {
+          ...response.data,
+          url: resolveFileUrl(response.data.url),
+        };
       },
     });
   };
@@ -133,7 +160,7 @@ export async function openFileInNewTab(fileId: string): Promise<void> {
       `/files/documents/${fileId}/url`,
       { params: { expiresIn: 3600 } }
     );
-    window.open(response.data.url, "_blank");
+    window.open(resolveFileUrl(response.data.url), "_blank");
   } catch (error: unknown) {
     const err = error as { response?: { data?: { message?: string } } };
     toast.error(err?.response?.data?.message || "Không thể mở file");
@@ -152,7 +179,7 @@ export async function downloadFile(fileId: string): Promise<void> {
 
     // Create a temporary anchor element to trigger download
     const link = document.createElement("a");
-    link.href = response.data.url;
+    link.href = resolveFileUrl(response.data.url);
     link.download = response.data.fileName;
     link.target = "_blank";
     document.body.appendChild(link);

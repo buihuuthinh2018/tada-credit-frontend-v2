@@ -4,6 +4,9 @@ import { useAuthStore } from "@/store/auth-store";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+// Server origin for resolving relative paths (e.g. proxy URLs)
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
