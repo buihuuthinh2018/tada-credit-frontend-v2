@@ -45,7 +45,7 @@ export function AdminSidebar() {
   const { user } = useAuth();
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col">
+    <aside className="w-64 bg-slate-900 text-white flex flex-col h-[100vh]">
       <div className="p-4">
         <h1 className="text-2xl font-bold text-white">TADA Admin</h1>
         <p className="text-sm text-gray-400 mt-1">
